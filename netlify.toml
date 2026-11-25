@@ -1,7 +1,12 @@
 [build]
   base = "sites/framebuilds-ai"
-  command = "python scripts/build_site.py"
+  command = "node test/payments.test.cjs && python scripts/build_site.py"
   publish = "dist"
 
 [build.environment]
   PYTHON_VERSION = "3.12"
+  NODE_VERSION = "22"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"

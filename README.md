@@ -1,6 +1,6 @@
 # framebuilds.ai
 
-Site em português para apresentar quatro pacotes de skills de IA e um combo completo. HTML, CSS e JavaScript estáticos, com catálogo pesquisável, filtros por pacote, requisitos e exemplos. Os botões exibem um aviso de vendas em breve; não há checkout ou coleta de dados.
+Site em português para apresentar quatro pacotes de skills de IA e um combo completo. HTML, CSS e JavaScript, com catálogo pesquisável, filtros por pacote, requisitos e exemplos. A loja pública permanece em pré-lançamento; um fluxo separado permite testar o Checkout Pro do Mercado Pago, sem vendas reais ou entrega de arquivos.
 
 ## Publicar no Netlify
 
@@ -9,11 +9,31 @@ Importe o repositório `jquinteiroo/framebuilds.ai` pelo GitHub e escolha a bran
 | Campo | Valor |
 | --- | --- |
 | Base directory | `sites/framebuilds-ai` |
-| Build command | `python scripts/build_site.py` |
+| Build command | `node test/payments.test.cjs && python scripts/build_site.py` |
 | Publish directory | `dist`, relativa à base |
 | Python | `3.12` |
+| Node.js | `22` |
+| Functions directory | `netlify/functions`, relativa à base |
 
-Não é necessário instalar bibliotecas ou configurar variáveis secretas para a versão atual. Após conectar o repositório, novos commits em `main` podem ser publicados automaticamente pela integração Git do Netlify.
+Não é necessário instalar bibliotecas. Sem configuração de credenciais, os endpoints de pagamento permanecem desativados. Após conectar o repositório, novos commits em `main` podem ser publicados automaticamente pela integração Git do Netlify.
+
+## Configurar o pagamento de teste
+
+No projeto do Netlify, entre em **Project configuration > Environment variables** e cadastre:
+
+| Variável | Valor |
+| --- | --- |
+| `MERCADOPAGO_TEST_ACCESS_TOKEN` | Access Token do ambiente **Teste** da aplicação no Mercado Pago |
+| `MERCADOPAGO_WEBHOOK_SECRET` | Assinatura secreta gerada ao salvar o webhook de **Teste** |
+| `MERCADOPAGO_TEST_ENABLED` | `true` |
+
+Os valores precisam estar disponíveis às Functions. As variáveis secretas ficam no painel do Netlify, não no código nem no chat. Depois de alterar as variáveis, faça um novo deploy.
+
+No Mercado Pago, abra **Configuração de webhooks**, mantenha **Teste**, informe `https://framebuildsai.netlify.app/.netlify/functions/mercadopago-webhook`, selecione **Order (Mercado Pago)** e salve para obter a assinatura secreta. Então cadastre essa assinatura no Netlify.
+
+Após o deploy, abra `https://framebuildsai.netlify.app/?checkout=test#pacote`. Esse modo mostra uma faixa de teste e permite testar os cinco pacotes. A página normal continua exibindo o aviso de vendas em breve. Não são liberados arquivos. Nenhum pagamento real é habilitado por essa implementação.
+
+Consulte os [detalhes técnicos e limites](sites/framebuilds-ai/README.md#pagamentos-de-teste) antes de planejar a abertura das vendas.
 
 ## Alterações
 
