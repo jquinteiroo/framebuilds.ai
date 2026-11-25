@@ -1,6 +1,6 @@
 [build]
   base = "sites/framebuilds-ai"
-  command = "node test/payments.test.cjs && python scripts/build_site.py"
+  command = "node test/payments.test.cjs && node test/checkout-ui.test.cjs && python scripts/build_site.py"
   publish = "dist"
 
 [build.environment]

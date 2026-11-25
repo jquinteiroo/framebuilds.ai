@@ -116,78 +116,10 @@
   document.addEventListener('keydown', event => { if (event.key === 'Escape') closeMenu(); });
   matchMedia('(min-width: 761px)').addEventListener('change', event => { if (event.matches) closeMenu(); });
 
-  const purchaseDialog = document.querySelector('#purchase-dialog');
   const packageDialog = document.querySelector('#package-dialog');
   const privacyDialog = document.querySelector('#privacy-dialog');
-  const testRequested = new URLSearchParams(location.search).get('checkout') === 'test';
-  const checkoutAction = document.querySelector('#checkout-action');
-  const checkoutStatus = document.querySelector('#checkout-status');
-  let testCheckoutReady = false;
-  let purchasePackageId = null;
-  let attemptId = null;
-  let checkoutAbort = null;
   let detailPackageId = 'completo';
-  if (testRequested) {
-    const banner = document.createElement('div');
-    banner.className = 'checkout-test-banner';
-    banner.textContent = 'Ambiente de testes · Compras de teste não liberam arquivos.';
-    document.querySelector('main').prepend(banner);
-    fetch('/.netlify/functions/payment-config', { cache: 'no-store' })
-      .then(response => response.ok ? response.json() : null)
-      .then(config => {
-        testCheckoutReady = config?.enabled === true && config.mode === 'test' && config.livePaymentsEnabled === false;
-        if (purchaseDialog.open) {
-          checkoutAction.disabled = !testCheckoutReady;
-          checkoutStatus.textContent = testCheckoutReady ? '' : 'O pagamento de teste ainda não está disponível.';
-        }
-      }).catch(() => { checkoutStatus.textContent = 'O pagamento de teste ainda não está disponível.'; });
-  }
-  function openPurchase(id) {
-    const pack = packages.get(id);
-    if (!pack) return;
-    purchasePackageId = id;
-    attemptId = crypto.randomUUID();
-    if (packageDialog.open) packageDialog.close();
-    document.querySelector('#purchase-title').textContent = pack.name;
-    const description = document.querySelector('#purchase-description');
-    description.replaceChildren();
-    const price = document.createElement('strong');
-    price.textContent = `${money(pack.priceCents)}, em pagamento único.`;
-    description.append('Este pacote custa ', price, testRequested ? ' Este é um checkout de teste e não libera o pacote.' : ' As vendas ainda não estão abertas.');
-    checkoutAction.hidden = !testRequested;
-    checkoutAction.disabled = !testCheckoutReady;
-    checkoutAction.textContent = 'Abrir checkout de teste ↗';
-    checkoutStatus.textContent = testRequested && !testCheckoutReady ? 'O pagamento de teste ainda não está disponível.' : '';
-    purchaseDialog.showModal();
-  }
-  checkoutAction.addEventListener('click', async () => {
-    if (!testCheckoutReady || checkoutAbort) return;
-    checkoutAbort = new AbortController();
-    const controller = checkoutAbort;
-    checkoutAction.disabled = true;
-    checkoutAction.textContent = 'Preparando checkout...';
-    checkoutStatus.textContent = '';
-    try {
-      const response = await fetch('/.netlify/functions/checkout', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ packageId: purchasePackageId, attemptId }), signal: controller.signal,
-      });
-      const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Não foi possível abrir o checkout de teste.');
-      const url = new URL(data.checkoutUrl);
-      if (data.mode !== 'test' || !data.receipt || url.protocol !== 'https:' || url.hostname !== 'www.mercadopago.com.br' || url.username || url.password || url.port || !url.pathname.startsWith('/checkout/')) throw new Error('O endereço do checkout não é válido.');
-      if (!purchaseDialog.open || controller.signal.aborted) return;
-      sessionStorage.setItem('framebuilds:checkout-test', data.receipt);
-      location.assign(url.href);
-    } catch (error) {
-      if (error.name !== 'AbortError') checkoutStatus.textContent = error.message || 'Não foi possível abrir o checkout de teste.';
-    } finally {
-      if (checkoutAbort === controller) checkoutAbort = null;
-      checkoutAction.disabled = !testCheckoutReady;
-      checkoutAction.textContent = 'Abrir checkout de teste ↗';
-    }
-  });
-  purchaseDialog.addEventListener('close', () => { checkoutAbort?.abort(); });
+  const openPurchase = window.FRAMEBUILDS_CHECKOUT.openPurchase;
   document.querySelectorAll('[data-purchase]').forEach(button => button.addEventListener('click', () => openPurchase(button.dataset.purchase)));
   document.querySelectorAll('[data-package-details]').forEach(button => button.addEventListener('click', () => {
     const pack = packages.get(button.dataset.packageDetails);

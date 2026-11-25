@@ -56,7 +56,8 @@ for (const pack of catalog.packages) {
     assert.deepEqual(payload.items, [{ title: pack.name, quantity: 1, unit_price: (pack.priceCents / 100).toFixed(2) }]);
     assert.equal(payload.processing_mode, 'manual');
     assert.equal(payload.config.online.success_url, `${env.URL}/pagamento.html`);
-    assert.equal(payload.external_reference, `fb:${pack.id}:${attempt}`);
+    assert.equal(payload.external_reference, `fb_${pack.id}_${attempt}`);
+    assert.match(payload.external_reference, /^[A-Za-z0-9_-]{1,64}$/);
     assert.equal(result.mode, 'test');
     assert.ok(result.receipt);
     assert.ok(!JSON.stringify(result).includes(env.MERCADOPAGO_TEST_ACCESS_TOKEN));
@@ -105,6 +106,7 @@ test('provider errors are sanitized and never expose credentials', async () => {
   const res = await fixture({ fail: true }).app.checkout(post({ packageId: 'conteudo', attemptId: randomUUID() }));
   assert.equal(res.statusCode, 502);
   assert.ok(!res.body.includes(env.MERCADOPAGO_TEST_ACCESS_TOKEN));
+  assert.match(parse(res).error, /MP_HTTP_401/);
 });
 
 test('signed receipts reject tampering or expiry before querying any order', async () => {
@@ -162,4 +164,19 @@ test('valid duplicate notifications are safe, ignore production and never grant 
   const live = notification(); live.body = JSON.stringify({ type: 'order', live_mode: true, data: { id } });
   assert.equal(parse(await f.app.webhook(live)).ignored, true);
   assert.equal(f.calls.length, 3);
+});
+
+test('the panel simulation for a Point order with a dummy ID never confirms a checkout', async () => {
+  const f = fixture();
+  const event = notification();
+  const dummyId = '123456';
+  const requestId = event.headers['x-request-id'];
+  const signature = createHmac('sha256', env.MERCADOPAGO_WEBHOOK_SECRET).update(`id:${dummyId};request-id:${requestId};ts:${now};`).digest('hex');
+  event.headers['x-signature'] = `ts=${now},v1=${signature}`;
+  event.queryStringParameters['data.id'] = dummyId;
+  event.body = JSON.stringify({ type: 'order', live_mode: false, action: 'order.processed', data: { id: dummyId, type: 'point', status: 'processed', status_detail: 'accredited', total_paid_amount: 100000 } });
+  const result = await f.app.webhook(event);
+  assert.equal(result.statusCode, 200);
+  assert.deepEqual(parse(result), { received: true, ignored: true });
+  assert.equal(f.calls.length, 0);
 });

@@ -16,7 +16,7 @@ São preços iniciais de oferta, ainda sem vendas abertas. Os avulsos somam R$ 1
 
 Execute `python -m http.server 4173 --bind 127.0.0.1 --directory dist` nesta pasta e abra http://127.0.0.1:4173.
 
-O servidor estático permite conferir a apresentação, mas não executa Functions. Para validar a lógica de pagamento sem rede ou credenciais reais, execute `node test/payments.test.cjs`. O Netlify usa Node 22 e executa os testes no build antes de gerar o HTML.
+O servidor estático permite conferir a apresentação, mas não executa Functions. Para validar a lógica de pagamento sem rede ou credenciais reais, execute `node test/payments.test.cjs` e `node test/checkout-ui.test.cjs`. O Netlify usa Node 22 e executa os testes no build antes de gerar o HTML.
 
 ## Edição
 
@@ -28,15 +28,17 @@ O servidor estático permite conferir a apresentação, mas não executa Functio
 - `dist/packages.css`: componentes dos pacotes, combo e detalhes.
 - `dist/catalog.js`: inventário editorial original de 99 skills identificadas na sessão. A loja exibe apenas as 90 selecionadas na composição dos pacotes.
 - `dist/app.js`: busca, filtros por categoria e pacote, menu celular, exemplos, detalhes e modais.
+- `dist/checkout.js`: entrada e persistência do modo de teste, criação do checkout e erros visíveis com timeout e nova tentativa.
 - `dist/checkout.css`, `dist/pagamento.html` e `dist/payment-result.js`: interface e resultado do checkout de teste.
 - `netlify/functions/`: criação de checkout, configuração pública, consulta de status e webhook.
 - `netlify/lib/payments.cjs`: validação e comunicação com a Orders API.
 - `test/payments.test.cjs`: casos de preço, assinatura, idempotência, ambiente e confirmação de status.
+- `test/checkout-ui.test.cjs`: execução da interface com DOM e rede simulados para verificar entrada no teste, navegação, erros, timeout, cancelamento e redirecionamento. Não substitui um teste no navegador com a conta do vendedor.
 - `dist/assets/creator.webp`: avatar fornecido no diretório de trabalho.
 
 ## Estado de lançamento
 
-Os botões da página pública abrem o aviso de vendas em breve com o nome e o preço da oferta escolhida. O parâmetro `?checkout=test` apresenta um fluxo separado, que só funciona depois da configuração das variáveis privadas do Netlify. Apenas alterar `salesOpen` não ativa uma cobrança real.
+Os botões da página pública abrem o aviso de vendas em breve com o nome e o preço da oferta escolhida, com o link “Entrar no ambiente de testes”. O rodapé também oferece “Testar pagamento”. O parâmetro `?checkout=test` apresenta um fluxo separado, que só funciona depois da configuração das variáveis privadas do Netlify. O modo de teste é mantido no `sessionStorage` da aba, mesmo ao navegar sem o parâmetro; “Sair do teste” usa `?checkout=off` e remove essa preferência. Apenas alterar `salesOpen` não ativa uma cobrança real.
 
 ## Pagamentos de teste
 
@@ -47,7 +49,7 @@ O site canônico é obtido da variável automática `URL` do Netlify, com fallba
 ### Fluxo
 
 1. O navegador envia apenas o ID do pacote e um UUID da tentativa. O backend consulta o preço em `packages.json`; valores fornecidos pelo navegador são rejeitados.
-2. `checkout` cria uma order com `processing_mode=manual` e envia o UUID em `X-Idempotency-Key`. Pedidos reais, valores divergentes, moeda diferente de BRL e URLs de checkout fora do domínio permitido são rejeitados.
+2. A referência externa utiliza apenas letras, números, hífens e underscores, com menos de 64 caracteres. `checkout` cria uma order com `processing_mode=manual` e envia o UUID em `X-Idempotency-Key`. Pedidos reais, valores divergentes, moeda diferente de BRL e URLs de checkout fora do domínio permitido são rejeitados.
 3. Um comprovante de consulta, assinado pelo backend e com validade de 24 horas, fica no `sessionStorage` da aba. Não contém dados pessoais nem permite entrega de arquivos.
 4. O comprador retorna a `pagamento.html`. O site envia o comprovante a `payment-status`, que consulta a order diretamente no Mercado Pago. Parâmetros como `status=approved` na URL nunca comprovam pagamento. A confirmação exige status `processed`, detalhe `accredited` e valor total pago igual ao esperado.
 5. `mercadopago-webhook` valida o HMAC-SHA256 do cabeçalho `x-signature` usando a assinatura secreta da aplicação e o manifest oficial. Consulta a order, aceita repetições sem efeitos colaterais e ignora eventos de produção. Não armazena pedidos nem realiza entrega; não registra dados pessoais ou credenciais no console.
@@ -56,7 +58,7 @@ O site canônico é obtido da variável automática `URL` do Netlify, com fallba
 
 No Mercado Pago, selecione **Configuração de webhooks > Teste**, use `https://framebuildsai.netlify.app/.netlify/functions/mercadopago-webhook`, marque **Order (Mercado Pago)** e salve. Copie a assinatura secreta gerada para `MERCADOPAGO_WEBHOOK_SECRET` no painel do Netlify. Com as variáveis configuradas e o deploy concluído, use a simulação do painel com um ID real de uma order de teste da integração. IDs fictícios não passam na consulta à API.
 
-`GET /.netlify/functions/payment-config` expõe apenas se o teste está configurado; `GET /.netlify/functions/mercadopago-webhook` serve para conferir se o endpoint existe. Os demais fluxos exigem POST. A página pública não usa esses endpoints até que o modo de teste seja solicitado.
+`GET /.netlify/functions/payment-config` expõe apenas se o teste está configurado; `GET /.netlify/functions/mercadopago-webhook` serve para conferir se o endpoint existe. O exemplo do simulador com `data.type=point` e ID fictício `123456` é ignorado, mesmo com uma assinatura válida, e não comprova uma compra no Checkout Pro. Os demais fluxos exigem POST. A página pública não usa esses endpoints até que o modo de teste seja solicitado. Falhas do provedor retornam um código seguro `MP_HTTP_<status>`, sem repassar a resposta original, credenciais ou dados pessoais. A interface mostra o erro, limita a espera a 15 segundos e permite repetir com a mesma chave de idempotência.
 
 ### Limites desta etapa
 

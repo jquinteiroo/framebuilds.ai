@@ -69,11 +69,20 @@ function createPayments({ env = process.env, fetchImpl = globalThis.fetch, now =
         }, ...(body ? { body: JSON.stringify(body) } : {}),
       });
     } catch { throw new PaymentError(502, 'Não foi possível consultar o Mercado Pago. Tente novamente.'); }
-    if (!res.ok) throw new PaymentError(res.status === 429 ? 503 : 502, 'O Mercado Pago não concluiu a solicitação de teste. Verifique a configuração e tente novamente.');
+    if (!res.ok) {
+      // Never return the provider body: it can contain credentials or personal data.
+      const advice = res.status === 401 ? 'Confira o Access Token de teste no Netlify e publique novamente.'
+        : res.status === 403 ? 'Confira se a aplicação tem permissão para Checkout Pro via Orders.'
+        : res.status === 429 ? 'Aguarde alguns instantes antes de tentar novamente.'
+        : 'Confira a configuração da integração e tente novamente.';
+      throw new PaymentError(res.status === 429 ? 503 : 502, `O Mercado Pago recusou a solicitação (MP_HTTP_${res.status}). ${advice}`);
+    }
     try { return await res.json(); } catch { throw new PaymentError(502, 'Resposta inválida do serviço de pagamento.'); }
   }
   function inspectOrder(order, claims) {
-    if (!TEST_ORDER.test(order.id) || order.id !== claims.orderId || order.currency !== 'BRL' || order.external_reference !== claims.reference || cents(order.total_amount) !== claims.priceCents) throw new PaymentError(502, 'O pedido retornado não corresponde a esta tentativa de teste.');
+    if (!TEST_ORDER.test(order.id)) throw new PaymentError(502, 'O pedido retornado está fora do ambiente de teste (MP_ORDER_MODE). Confira o Access Token na aba Teste do Mercado Pago.');
+    if (order.currency !== 'BRL') throw new PaymentError(502, 'A moeda do pedido não é BRL (MP_ORDER_CURRENCY). Confira o país da conta do vendedor.');
+    if (order.id !== claims.orderId || order.external_reference !== claims.reference || cents(order.total_amount) !== claims.priceCents) throw new PaymentError(502, 'O pedido retornado não corresponde a esta tentativa de teste (MP_ORDER_MISMATCH).');
     const approved = order.status === 'processed' && order.status_detail === 'accredited' && cents(order.total_paid_amount) === claims.priceCents;
     const failed = ['failed', 'canceled', 'cancelled', 'expired', 'refunded', 'charged_back'].includes(order.status);
     return { mode: 'test', packageName: packages.get(claims.packageId).name, priceCents: claims.priceCents,
@@ -93,7 +102,7 @@ function createPayments({ env = process.env, fetchImpl = globalThis.fetch, now =
       const input = bodyOf(event, ['packageId', 'attemptId']);
       const pack = packages.get(input.packageId);
       if (!pack || !UUID.test(input.attemptId)) throw new PaymentError(400, 'Pacote ou tentativa inválida.');
-      const reference = `fb:${pack.id}:${input.attemptId}`;
+      const reference = `fb_${pack.id}_${input.attemptId}`;
       const back = `${site.origin}/pagamento.html`;
       const order = await api('/v1/orders', { method: 'POST', idempotencyKey: input.attemptId, body: {
         type: 'online', processing_mode: 'manual', capture_mode: 'automatic_async',

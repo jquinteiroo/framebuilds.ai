@@ -9,7 +9,7 @@ Importe o repositório `jquinteiroo/framebuilds.ai` pelo GitHub e escolha a bran
 | Campo | Valor |
 | --- | --- |
 | Base directory | `sites/framebuilds-ai` |
-| Build command | `node test/payments.test.cjs && python scripts/build_site.py` |
+| Build command | `node test/payments.test.cjs && node test/checkout-ui.test.cjs && python scripts/build_site.py` |
 | Publish directory | `dist`, relativa à base |
 | Python | `3.12` |
 | Node.js | `22` |
@@ -31,7 +31,7 @@ Os valores precisam estar disponíveis às Functions. As variáveis secretas fic
 
 No Mercado Pago, abra **Configuração de webhooks**, mantenha **Teste**, informe `https://framebuildsai.netlify.app/.netlify/functions/mercadopago-webhook`, selecione **Order (Mercado Pago)** e salve para obter a assinatura secreta. Então cadastre essa assinatura no Netlify.
 
-Após o deploy, abra `https://framebuildsai.netlify.app/?checkout=test#pacote`. Esse modo mostra uma faixa de teste e permite testar os cinco pacotes. A página normal continua exibindo o aviso de vendas em breve. Não são liberados arquivos. Nenhum pagamento real é habilitado por essa implementação.
+Após o deploy, abra `https://framebuildsai.netlify.app/?checkout=test#pacote`. Esse modo mostra uma faixa de teste e permite testar os cinco pacotes. A página normal continua exibindo o aviso de vendas em breve e uma entrada para o ambiente de testes. O rodapé também tem o link “Testar pagamento”. O modo de teste é mantido na mesma aba; use “Sair do teste” na faixa para retornar à loja normal. Não são liberados arquivos. Nenhum pagamento real é habilitado por essa implementação.
 
 Consulte os [detalhes técnicos e limites](sites/framebuilds-ai/README.md#pagamentos-de-teste) antes de planejar a abertura das vendas.
 
