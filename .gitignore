@@ -1,0 +1,23 @@
+# Local credentials and editor state
+.env
+.env.*
+!.env.example
+.codex/
+.agents/
+.aws/
+.netlify/
+**/.openai/
+
+# Generated archives and Python caches
+*.zip
+*.tar.gz
+__pycache__/
+*.py[cod]
+
+# Original avatar retained locally; the website uses the optimized WebP asset
+/image.png
+/sites/framebuilds-ai/dist/assets/creator.png
+
+# OS files
+.DS_Store
+Thumbs.db
