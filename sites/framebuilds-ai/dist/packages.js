@@ -183,10 +183,10 @@ window.FRAMEBUILDS_STORE = {
       "description": "Roteiro, voz, animação e edição em uma trilha dedicada a vídeo.",
       "audience": "Para criadores e marcas que querem explorar diferentes formatos de vídeo com IA.",
       "outcomes": [
-        "Roteiros, cenas e direção para vídeos",
+        "Roteiros para vídeos curtos e explicações",
         "Reels, motion graphics e animações",
         "UGC, tutoriais e vídeos de produto",
-        "Roteiros, cenas e direção para vídeos"
+        "Revisão de edição, áudio e legendas"
       ],
       "requirements": "Agente de IA compatível com arquivos de instruções. Renderização, voz e geração de mídia exigem as ferramentas e contas escolhidas por você; serviços e créditos são contratados à parte.",
       "examplePrompt": "Planeje um vídeo vertical sobre meu produto, com roteiro, narração, legendas e direção de cenas.",
