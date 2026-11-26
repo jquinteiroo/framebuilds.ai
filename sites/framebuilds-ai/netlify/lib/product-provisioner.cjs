@@ -6,7 +6,7 @@ const manifest = require('../../product-manifest.json');
 const { validAsset } = require('./product-assets.cjs');
 function createProvisioner({ env = process.env, entries = manifest, storeFactory, now = Date.now } = {}) {
   return async event => {
-    const reply = statusCode => ({ statusCode, headers: { 'Cache-Control': 'no-store', 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: statusCode === 200 }) });
+    const reply = (statusCode, diagnostic) => ({ statusCode, headers: { 'Cache-Control': 'no-store', 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: statusCode === 200, ...(diagnostic ? { diagnostic } : {}) }) });
     if (event.httpMethod !== 'POST') return reply(405);
     const secret = env.FRAMEBUILDS_UPLOAD_TOKEN || '';
     const expiry = Number(env.FRAMEBUILDS_UPLOAD_EXPIRES);
@@ -18,6 +18,7 @@ function createProvisioner({ env = process.env, entries = manifest, storeFactory
     if (!validAsset(asset) || typeof event.body !== 'string' || !event.isBase64Encoded || event.body.length > 150000) return reply(400);
     const data = Buffer.from(event.body, 'base64');
     if (data.length !== asset.size || data[0] !== 80 || data[1] !== 75 || createHash('sha256').update(data).digest('hex') !== asset.sha256) return reply(400);
+    let stage = 'context';
     try {
       let store;
       if (storeFactory) store = await storeFactory();
@@ -26,10 +27,15 @@ function createProvisioner({ env = process.env, entries = manifest, storeFactory
         if (event.blobs) connectLambda(event);
         store = getStore({ name: 'framebuilds-products', consistency: 'strong' });
       }
+      stage = 'write';
       await store.set(asset.key, data, { onlyIfNew: true, metadata: { sha256: asset.sha256, size: asset.size } });
+      stage = 'metadata';
       const saved = await store.getMetadata(asset.key);
       return reply(saved?.metadata?.sha256 === asset.sha256 && saved.metadata.size === asset.size ? 200 : 409);
-    } catch { return reply(503); }
+    } catch (error) {
+      const type = ['MissingBlobsEnvironmentError', 'BlobsConsistencyError', 'BlobsInternalError', 'TypeError'].includes(error.name) ? error.name : 'storage-error';
+      return reply(503, { stage, type, ...(Number.isInteger(error.status) ? { status: error.status } : {}) });
+    }
   };
 }
 exports.createProvisioner = createProvisioner;
