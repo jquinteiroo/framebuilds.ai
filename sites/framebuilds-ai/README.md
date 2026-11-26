@@ -12,7 +12,7 @@ Loja de pacotes originais de instruções para agentes de IA. Checkout Pro do Me
 | Vídeo & Motion Studio | R$ 59,90 | 40 |
 | Framebuilds Completo | R$ 97,00 | União das quatro: 90 |
 
-Os arquivos foram escritos para a framebuilds.ai. Cada rotina tem SKILL.md com entrada, etapas, entrega e conferência. Todos os ZIPs incluem guia e exemplos. Ferramentas, hospedagem e créditos externos são contratados ? parte.
+Os arquivos foram escritos para a framebuilds.ai. Cada rotina tem SKILL.md com entrada, etapas, entrega e conferência. Todos os ZIPs incluem guia e exemplos. Ferramentas, hospedagem e créditos externos são contratados é parte.
 
 ## Desenvolvimento
 
@@ -54,11 +54,11 @@ O SDK oficial mercadopago@3.6.2 usa Preference.create e init_point. O servidor v
 
 O webhook payment está registrado em https://framebuildsai.netlify.app/.netlify/functions/mercadopago-webhook. O receptor valida HMAC e grava o evento antes de responder. O worker consulta o pagamento real, aplica atualizações por data e repete falhas. O redirecionamento sozinho nunca libera o produto.
 
-O comprador acessa o ZIP pelo link privado salvo na página de retorno, válido por 30 dias desde a criação do pedido. O fragmento do link ? removido do endereço e o download usa Authorization, sem segredo na query. Cada download reconsulta o pagamento e bloqueia reembolso ou contestação. Não há envio automático por e-mail; o comprador deve salvar o link.
+O comprador acessa o ZIP pelo link privado salvo na página de retorno, válido por 30 dias desde a criação do pedido. O fragmento do link é removido do endereço e o download usa Authorization, sem segredo na query. Cada download reconsulta o pagamento e bloqueia reembolso ou contestação. Não há envio automático por e-mail; o comprador deve salvar o link.
 
 ## Teste separado
 
-O vendedor automático de teste ? 3877354270, aplicação 1488315320590790; comprador 3877354272. Configure MERCADOPAGO_TEST_ACCESS_TOKEN, MERCADOPAGO_TEST_SELLER_ID, MERCADOPAGO_TEST_APPLICATION_ID, MERCADOPAGO_RECEIPT_SECRET e MERCADOPAGO_WEBHOOK_SECRET. Com MERCADOPAGO_MODE=test e MERCADOPAGO_TEST_ENABLED=true, abra /?checkout=test#pacote. O backend exige test_user e recusa conta real. Testes nunca autorizam download.
+O vendedor automático de teste é 3877354270, aplicação 1488315320590790; comprador 3877354272. Configure MERCADOPAGO_TEST_ACCESS_TOKEN, MERCADOPAGO_TEST_SELLER_ID, MERCADOPAGO_TEST_APPLICATION_ID, MERCADOPAGO_RECEIPT_SECRET e MERCADOPAGO_WEBHOOK_SECRET. Com MERCADOPAGO_MODE=test e MERCADOPAGO_TEST_ENABLED=true, abra /?checkout=test#pacote. O backend exige test_user e recusa conta real. Testes nunca autorizam download.
 
 npm run test:connection cria uma preferência e consulta a API de teste; não executa pagamento. Essa conexão já passou, mas ainda falta concluir a compra com o comprador de teste e verificar a notificação no ambiente publicado.
 

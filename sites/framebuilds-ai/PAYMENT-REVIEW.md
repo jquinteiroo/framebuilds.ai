@@ -4,7 +4,7 @@ Data: 26/11/2026. Checkout Pro pela Preferences API e SDK oficial mercadopago@3.
 
 ## Resultado
 
-O código de produção inclui pedidos duráveis em PostgreSQL, preferências deduplicadas, webhook com HMAC, conciliação agendada e download privado condicionado ? aprovação. A conta foi ativada no painel e as credenciais/assinatura foram guardadas como segredos no Netlify. As vendas permanecem fechadas até verificar deploy, migração, arquivos e pagamento completo.
+O código de produção inclui pedidos duráveis em PostgreSQL, preferências deduplicadas, webhook com HMAC, conciliação agendada e download privado condicionado é aprovação. A conta foi ativada no painel e as credenciais/assinatura foram guardadas como segredos no Netlify. As vendas permanecem fechadas até verificar deploy, migração, arquivos e pagamento completo.
 
 Os testes usam PGlite para executar o esquema e as transações PostgreSQL; transportes do Mercado Pago e armazenamento são simulados. Eles não substituem um pagamento aprovado e uma notificação entregue pelo provedor.
 
@@ -170,4 +170,4 @@ Concluir deploy e upload privado; validar compra de teste; revisar os controles 
 
 Inspeção local, checklist oficial quality_checklist, save_webhook e get_credentials do MCP; documentação oficial Mercado Pago/Netlify; skills mp-integrate, mp-webhooks, mp-review e skill-creator.
 
-A tabela preserva todos os critérios oficiais consultados. Não ? pontuação oficial nem certificado de homologação.
+A tabela preserva todos os critérios oficiais consultados. Não é pontuação oficial nem certificado de homologação.

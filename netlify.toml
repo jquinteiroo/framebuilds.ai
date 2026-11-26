@@ -6,6 +6,9 @@
 [build.environment]
   PYTHON_VERSION = "3.12"
   NODE_VERSION = "22"
+  # Public account IDs and boolean/mode controls are not credentials. Keep all
+  # access tokens, signatures and signing/upload secrets in the scanner.
+  SECRETS_SCAN_OMIT_KEYS = "MERCADOPAGO_MODE,MERCADOPAGO_LIVE_ENABLED,MERCADOPAGO_TEST_ENABLED,MERCADOPAGO_SELLER_ID,MERCADOPAGO_TEST_SELLER_ID,MERCADOPAGO_TEST_APPLICATION_ID"
 
 [functions]
   directory = "netlify/functions"
