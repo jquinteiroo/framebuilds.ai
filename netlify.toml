@@ -13,6 +13,7 @@
 [functions]
   directory = "netlify/functions"
   node_bundler = "esbuild"
+  external_node_modules = ["mercadopago", "@netlify/blobs", "@netlify/database"]
 
 [functions."reconcile-payments"]
   schedule = "*/2 * * * *"
