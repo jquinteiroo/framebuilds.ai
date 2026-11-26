@@ -1,0 +1,32 @@
+{
+  "conteudo": {
+    "key": "packages/8d29108cc87f182c8c874a973ab9ad1001fd73f109c866c50e66120a463e8781.zip",
+    "sha256": "8d29108cc87f182c8c874a973ab9ad1001fd73f109c866c50e66120a463e8781",
+    "fileName": "conteudo.zip",
+    "size": 14631
+  },
+  "estrategia": {
+    "key": "packages/c329b0ba5890d4972ae5d069cefc1b959c2f727e6229321ea2d4ae9cc1cba8b7.zip",
+    "sha256": "c329b0ba5890d4972ae5d069cefc1b959c2f727e6229321ea2d4ae9cc1cba8b7",
+    "fileName": "estrategia.zip",
+    "size": 11292
+  },
+  "sites": {
+    "key": "packages/6e178a7c6ab17711005fc38edb7e7ba5dc25c1b459a9763939399c78227187cf.zip",
+    "sha256": "6e178a7c6ab17711005fc38edb7e7ba5dc25c1b459a9763939399c78227187cf",
+    "fileName": "sites.zip",
+    "size": 21300
+  },
+  "video": {
+    "key": "packages/3b2af2a60ef7f944b1cb280b9f436a5dae44c9a7683a930383cf3225f86565a1.zip",
+    "sha256": "3b2af2a60ef7f944b1cb280b9f436a5dae44c9a7683a930383cf3225f86565a1",
+    "fileName": "video.zip",
+    "size": 30844
+  },
+  "completo": {
+    "key": "packages/42693e184c6d05272f7f9e478f7114814d75d3cd06eaf505acedb9b6009dd603.zip",
+    "sha256": "42693e184c6d05272f7f9e478f7114814d75d3cd06eaf505acedb9b6009dd603",
+    "fileName": "completo.zip",
+    "size": 65794
+  }
+}

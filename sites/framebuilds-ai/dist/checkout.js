@@ -10,6 +10,7 @@
   let remembered = false;
   try { remembered = sessionStorage.getItem(modeKey) === 'true'; } catch {}
   let testing = requested === 'test' || (requested !== 'off' && remembered);
+  const salesOpen = window.FRAMEBUILDS_STORE.salesOpen === true;
   let ready = false;
   let loading = false;
   let configMessage = '';
@@ -38,10 +39,10 @@
     document.querySelector('main').prepend(banner);
   }
   function render() {
-    action.hidden = !testing;
-    entry.hidden = testing;
+    action.hidden = !testing && !salesOpen;
+    entry.hidden = testing || salesOpen;
     action.disabled = loading || !!activeRequest;
-    action.textContent = activeRequest ? 'Preparando checkout...' : loading ? 'Verificando configuração...' : ready ? 'Pagar com Mercado Pago · teste ↗' : 'Verificar configuração de teste ↻';
+    action.textContent = activeRequest ? 'Preparando checkout...' : loading ? 'Verificando pagamento...' : ready ? `Pagar com Mercado Pago${testing ? ' · teste' : ''} ↗` : 'Verificar disponibilidade ↻';
   }
   async function loadConfig() {
     if (loading) return;
@@ -55,8 +56,8 @@
       let config;
       try { config = await response.json(); } catch { throw new Error('A configuração não retornou uma resposta válida. Confira o deploy no Netlify e tente novamente.'); }
       if (!response.ok) throw new Error(`Não foi possível verificar a configuração (HTTP ${response.status}). Tente novamente.`);
-      ready = config?.enabled === true && config.mode === 'test' && config.livePaymentsEnabled === false;
-      configMessage = ready ? 'Pronto para testar. Nenhuma compra real será habilitada.' : 'O teste está desativado no servidor. Confira as variáveis de teste e faça um novo deploy.';
+      ready = config?.enabled === true && (testing ? config.mode === 'test' && config.livePaymentsEnabled === false : config.mode === 'production' && config.livePaymentsEnabled === true && config.deliveryEnabled === true);
+      configMessage = ready ? testing ? 'Pronto para testar. Nenhuma compra real será habilitada.' : 'Você pagará no Mercado Pago. O arquivo será liberado após a confirmação.' : 'O pagamento ainda não está disponível. Tente novamente mais tarde.';
     } catch (error) {
       configMessage = error.name === 'TimeoutError' ? 'A verificação demorou demais. Tente novamente.' : error.message || 'Não foi possível verificar o teste. Tente novamente.';
     } finally {
@@ -76,8 +77,8 @@
     const description = document.querySelector('#purchase-description');
     const price = document.createElement('strong');
     price.textContent = `${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pack.priceCents / 100)}, em pagamento único.`;
-    description.replaceChildren('Este pacote custa ', price, testing ? ' Este é um checkout de teste e não libera o pacote.' : ' As vendas ainda não estão abertas.');
-    status.textContent = testing ? configMessage : '';
+    description.replaceChildren('Este pacote custa ', price, testing ? ' Este é um checkout de teste e não libera o pacote.' : salesOpen ? ' Você receberá acesso ao arquivo após a confirmação do pagamento.' : ' As vendas ainda não estão abertas.');
+    status.textContent = testing || salesOpen ? configMessage : '';
     render();
     dialog.showModal();
   }
@@ -94,13 +95,13 @@
   });
   action.addEventListener('click', async event => {
     event.preventDefault();
-    if (!testing || loading || activeRequest) return;
+    if ((!testing && !salesOpen) || loading || activeRequest) return;
     if (!ready) { await loadConfig(); return; }
     const controller = new AbortController();
     activeRequest = controller;
     let timedOut = false;
     const timeout = setTimeout(() => { timedOut = true; controller.abort(); }, 15000);
-    status.textContent = 'Criando seu pedido de teste no Mercado Pago...';
+    status.textContent = testing ? 'Criando seu pedido de teste no Mercado Pago...' : 'Preparando seu pagamento no Mercado Pago...';
     render();
     try {
       attemptId ||= crypto.randomUUID();
@@ -112,11 +113,14 @@
       try { data = await response.json(); } catch { throw new Error(`O servidor não retornou uma resposta válida (HTTP ${response.status}). Confira o deploy no Netlify e tente novamente.`); }
       if (!response.ok) throw new Error(data.error || `Não foi possível abrir o checkout de teste (HTTP ${response.status}).`);
       const url = new URL(data.checkoutUrl);
-      if (data.mode !== 'test' || !data.receipt || url.protocol !== 'https:' || url.hostname !== 'www.mercadopago.com.br' || url.username || url.password || url.port || !url.pathname.startsWith('/checkout/')) throw new Error('O endereço do checkout de teste não é válido.');
+      if (data.mode !== (testing ? 'test' : 'production') || !data.receipt || url.protocol !== 'https:' || url.hostname !== 'www.mercadopago.com.br' || url.username || url.password || url.port || !url.pathname.startsWith('/checkout/')) throw new Error('O endereço do checkout não é válido.');
       if (!dialog.open || controller.signal.aborted) return;
-      try { sessionStorage.setItem('framebuilds:checkout-test', data.receipt); }
+      try {
+        sessionStorage.setItem(testing ? 'framebuilds:checkout-test' : 'framebuilds:checkout-live', data.receipt);
+        sessionStorage.setItem('framebuilds:last-checkout-mode', data.mode);
+      }
       catch { throw new Error('Permita o armazenamento desta aba no navegador para consultar o resultado do teste.'); }
-      status.textContent = 'Abrindo o checkout de teste...';
+      status.textContent = testing ? 'Abrindo o checkout de teste...' : 'Abrindo o Mercado Pago...';
       location.assign(url.href);
     } catch (error) {
       if (dialog.open && (timedOut || error.name !== 'AbortError')) status.textContent = timedOut ? 'O pedido demorou demais. Tente novamente; a mesma tentativa será reutilizada.' : error.message || 'Não foi possível abrir o checkout de teste. Tente novamente.';
@@ -129,5 +133,6 @@
   dialog.addEventListener('close', () => activeRequest?.abort());
   window.FRAMEBUILDS_CHECKOUT = { openPurchase };
   if (testing) { showBanner(); loadConfig(); }
+  else if (salesOpen) loadConfig();
   else render();
 })();

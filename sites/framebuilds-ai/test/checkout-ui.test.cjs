@@ -21,12 +21,12 @@ function element() {
     async click() { if (!this.disabled && !this.hidden) await this.handlers.click?.({ preventDefault() {} }); },
   };
 }
-function browser({ query = '', stored = new Map(), fetchImpl, blockedStorage = false, crypto = webcrypto, timer = setTimeout, cancelTimer = clearTimeout } = {}) {
+function browser({ query = '', stored = new Map(), fetchImpl, blockedStorage = false, crypto = webcrypto, timer = setTimeout, cancelTimer = clearTimeout, store = catalog } = {}) {
   const nodes = new Map();
   const document = { querySelector(selector) { if (!nodes.has(selector)) nodes.set(selector, element()); return nodes.get(selector); }, createElement: element };
   const calls = []; const redirects = [];
   const location = { href: `https://framebuildsai.netlify.app/${query}`, search: query.split('#')[0], assign(url) { redirects.push(url); } };
-  const window = { FRAMEBUILDS_STORE: catalog };
+  const window = { FRAMEBUILDS_STORE: store };
   const sessionStorage = {
     getItem(key) { if (blockedStorage) throw new Error('blocked'); return stored.get(key); },
     setItem(key, value) { if (blockedStorage) throw new Error('blocked'); stored.set(key, value); },
@@ -129,4 +129,24 @@ test('closing a pending checkout cancels navigation even if a response arrives l
   b.node('#purchase-dialog').close();
   respond(Response.json({ mode: 'test', receipt: 'receipt', checkoutUrl })); await pending;
   assert.equal(b.redirects.length, 0);
+});
+
+test('production checkout stores a separate access receipt and only opens when delivery is configured', async () => {
+  const b = browser({ store: { ...catalog, salesOpen: true }, fetchImpl: async url => Response.json(url.endsWith('payment-config')
+    ? { enabled: true, mode: 'production', livePaymentsEnabled: true, deliveryEnabled: true }
+    : { mode: 'production', receipt: 'signed-production-receipt', checkoutUrl }) });
+  await settle(); b.open('conteudo');
+  assert.equal(b.node('#checkout-action').hidden, false);
+  assert.equal(b.node('#checkout-test-entry').hidden, true);
+  await b.node('#checkout-action').click();
+  assert.deepEqual(b.redirects, [checkoutUrl]);
+  assert.equal(b.stored.get('framebuilds:checkout-live'), 'signed-production-receipt');
+  assert.equal(b.stored.has('framebuilds:checkout-test'), false);
+});
+
+test('a test page cannot redirect to a production payment even if the server returns it', async () => {
+  const b = browser({ query: '?checkout=test', fetchImpl: async url => Response.json(url.endsWith('payment-config') ? configured : { mode: 'production', receipt: 'live-receipt', checkoutUrl }) });
+  await settle(); b.open('conteudo'); await b.node('#checkout-action').click();
+  assert.equal(b.redirects.length, 0);
+  assert.equal(b.stored.has('framebuilds:checkout-live'), false);
 });

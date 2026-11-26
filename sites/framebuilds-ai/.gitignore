@@ -1,0 +1,11 @@
+# This directory is also a Git repository; parent ignore rules do not apply here.
+.env
+.env.*
+!.env.example
+node_modules/
+.products/
+.netlify/
+.openai/
+__pycache__/
+*.py[cod]
+*.zip

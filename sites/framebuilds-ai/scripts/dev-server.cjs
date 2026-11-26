@@ -2,11 +2,11 @@
 const http = require('node:http');
 const fs = require('node:fs/promises');
 const path = require('node:path');
-const { createPayments } = require('../netlify/lib/payments.cjs');
+const { createGateway } = require('../netlify/lib/payment-gateway.cjs');
 const root = path.resolve(__dirname, '../dist');
 const port = Number(process.env.PORT || 3000);
 const env = { ...process.env, APP_URL: `http://localhost:${port}` };
-const app = createPayments({ env });
+const app = createGateway({ env });
 const functions = { checkout: app.checkout, 'payment-config': app.config, 'payment-status': app.status, 'mercadopago-webhook': app.webhook };
 const types = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.css': 'text/css; charset=utf-8', '.json': 'application/json', '.svg': 'image/svg+xml', '.webp': 'image/webp', '.png': 'image/png', '.woff2': 'font/woff2' };
 http.createServer(async (req, res) => {

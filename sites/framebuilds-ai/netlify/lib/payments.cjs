@@ -160,4 +160,4 @@ function createPayments({ env = process.env, fetchImpl = globalThis.fetch, now =
     }),
   };
 }
-module.exports = { createPayments, cents };
+module.exports = { createPayments, cents, PaymentError, response, header, bodyOf, equalHex };

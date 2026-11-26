@@ -1,104 +1,82 @@
 # framebuilds.ai
 
-Loja de apresentação em português, com quatro pacotes temáticos e um combo completo. Frontend estático e quatro Netlify Functions com o SDK oficial mercadopago@3.6.2 para testar Checkout Pro pela Preferences API. A loja pública permanece em pré-lançamento.
+Loja de pacotes originais de instruções para agentes de IA. Checkout Pro do Mercado Pago com redirecionamento hospedado, pedidos em PostgreSQL e entrega de ZIPs privados no Netlify. As vendas permanecem fechadas até validar o ambiente publicado e concluir o pagamento de teste.
 
-| Oferta | Preço único | Composição |
+## Ofertas
+
+| Pacote | Preço único | Rotinas originais |
 | --- | ---: | ---: |
-| Conteúdo Essencial | R$ 19,90 | 15 skills e rotinas |
-| Pesquisa & Estratégia | R$ 29,90 | 10 skills e rotinas |
-| Sites & Produtividade | R$ 49,90 | 25 skills e rotinas |
-| Vídeo & Motion Studio | R$ 59,90 | 40 skills e rotinas |
-| Framebuilds Completo | R$ 97,00 | União dos quatro: 90 skills e rotinas |
+| Conteúdo Essencial | R$ 19,90 | 15 |
+| Pesquisa & Estratégia | R$ 29,90 | 10 |
+| Sites & Produtividade | R$ 49,90 | 25 |
+| Vídeo & Motion Studio | R$ 59,90 | 40 |
+| Framebuilds Completo | R$ 97,00 | União das quatro: 90 |
 
-São preços iniciais de oferta, ainda sem vendas abertas. Os avulsos somam R$ 159,60; o combo economiza R$ 62,60 em relação à compra dos quatro. Não há promessa de suporte ilimitado, atualizações perpétuas ou assinatura de ferramentas.
+Os arquivos foram escritos para a framebuilds.ai. Cada rotina tem SKILL.md com entrada, etapas, entrega e conferência. Todos os ZIPs incluem guia e exemplos. Ferramentas, hospedagem e créditos externos são contratados ? parte.
 
-## Prévia local
+## Desenvolvimento
 
-Execute `python -m http.server 4173 --bind 127.0.0.1 --directory dist` nesta pasta e abra http://127.0.0.1:4173.
+Na pasta sites/framebuilds-ai, execute npm ci e npm run build. Use Node >=22.12.0 e Python 3. O build executa os testes e gera dist/index.html e dist/packages.js. npm run dev executa o checkout local em http://localhost:3000; python -m http.server serve apenas o frontend.
 
-O servidor estático permite conferir a apresentação, mas não executa Functions. Para validar a lógica de pagamento sem rede ou credenciais reais, execute `node test/payments.test.cjs` e `node test/checkout-ui.test.cjs`. O Netlify usa Node 22 e executa os testes no build antes de gerar o HTML.
+- packages.json: preços, composição e salesOpen.
+- src/index.template.html: conteúdo e estrutura da loja.
+- dist/catalog.js: somente resumos das 90 rotinas originais.
+- netlify/lib/commerce.cjs: fluxo de produção, confirmação e autorização de download.
+- netlify/lib/order-repository.cjs: transações e conciliação durável.
+- netlify/database/migrations/: esquema PostgreSQL aditivo.
+- netlify/functions/download.mjs: entrega após confirmação real.
+- netlify/functions/reconcile-payments.cjs: conciliação agendada a cada dois minutos.
+- PAYMENT-REVIEW.md: revisão, evidências e pendências.
 
-## Edição
+## Arquivos comerciais privados
 
-- `packages.json`: fonte única de nomes, preços em centavos, benefícios, requisitos e composição dos pacotes.
-- `src/index.template.html`: estrutura e conteúdo da página. Depois de editar, execute `python scripts/build_site.py`.
-- `scripts/build_site.py`: valida o inventário, resolve a composição do combo e gera `dist/index.html` e `dist/packages.js`.
-- `dist/index.html` e `dist/packages.js`: arquivos gerados; não edite preços diretamente neles.
-- `dist/styles.css`: identidade visual e layouts responsivos.
-- `dist/packages.css`: componentes dos pacotes, combo e detalhes.
-- `dist/catalog.js`: inventário editorial original de 99 skills identificadas na sessão. A loja exibe apenas as 90 selecionadas na composição dos pacotes.
-- `dist/app.js`: busca, filtros por categoria e pacote, menu celular, exemplos, detalhes e modais.
-- `dist/checkout.js`: entrada e persistência do modo de teste, criação do checkout e erros visíveis com timeout e nova tentativa.
-- `dist/checkout.css`, `dist/pagamento.html` e `dist/payment-result.js`: interface e resultado do checkout de teste.
-- `netlify/functions/`: criação de checkout, configuração pública, consulta de status e webhook.
-- `netlify/lib/payments.cjs`: validação, SDK oficial e comunicação com a Preferences API.
-- `test/payments.test.cjs`: casos de preço, assinatura, idempotência, ambiente e confirmação de status.
-- `test/checkout-ui.test.cjs`: execução da interface com DOM e rede simulados para verificar entrada no teste, navegação, erros, timeout, cancelamento e redirecionamento. Não substitui um teste no navegador com a conta do vendedor.
-- `dist/assets/creator.webp`: avatar fornecido no diretório de trabalho.
+As fontes ficam em .products/skills.json, .products/GUIA.md e .products/EXEMPLOS.md, ignorados pelo Git. Gere os cinco ZIPs com python scripts/build-product-archives.py. O script deriva o catélogo público, mas nunca publica as instruções completas. Mantenha uma cópia privada dessas fontes e dos arquivos .products/releases/*.zip; eles não podem ser recuperados do repositório público.
 
-## Estado de lançamento
+product-manifest.json guarda hashes, tamanhos e chaves de objetos privados. Sua presença não comprova upload: o servidor verifica os metadados dos objetos antes de habilitar checkout. Não coloque os ZIPs em dist nem no GitHub público.
 
-Os botões da página pública abrem o aviso de vendas em breve com o nome e o preço da oferta escolhida, com o link “Entrar no ambiente de testes”. O rodapé também oferece “Testar pagamento”. O parâmetro `?checkout=test` apresenta um fluxo separado, que só funciona depois da configuração das variáveis privadas do Netlify. O modo de teste é mantido no `sessionStorage` da aba, mesmo ao navegar sem o parâmetro; “Sair do teste” usa `?checkout=off` e remove essa preferência. Apenas alterar `salesOpen` não ativa uma cobrança real.
+Para enviar por CLI, configure NETLIFY_SITE_ID e NETLIFY_AUTH_TOKEN apenas no ambiente local e execute node scripts/upload-products.mjs .products/releases. Há também uma rota temporária provision-products protegida por token independente, prazo e allowlist dos cinco hashes: ela não lê arquivos nem altera pagamentos. Remova sua configuração depois de enviar os produtos.
 
-## Pagamentos de teste
+## Configuração do Mercado Pago
 
-### 1. Instalação
+Aplicação FramebuildsAI 1397095748767873, Checkout Pro, Brasil. Conta real de recebimento 326355222, verificada pela API. A ativação das credenciais foi concluída no painel em 26/11/2026. As credenciais ficam em .env local e nas variáveis secretas do Netlify; nunca no frontend ou no Git.
 
-Execute npm ci nesta pasta. O SDK oficial mercadopago está fixado em 3.6.2, versão estável consultada no registro oficial em 26/11/2026. O Netlify executa npm run build, que roda 26 testes e gera o site. Node 22 ou superior.
+| Variável | Finalidade |
+| --- | --- |
+| MERCADOPAGO_MODE | test ou production; seleciona o backend inteiro |
+| MERCADOPAGO_ACCESS_TOKEN | Token da aplicação real |
+| MERCADOPAGO_SELLER_ID | 326355222 |
+| MERCADOPAGO_ORDER_SECRET | Segredo independente, mínimo 64 caracteres |
+| MERCADOPAGO_PRODUCTION_WEBHOOK_SECRET | Assinatura completa do painel de Webhooks |
+| MERCADOPAGO_LIVE_ENABLED | true somente após validação final |
+| NETLIFY_DB_URL | Conexão privada, provisionada pelo Netlify Database |
 
-### 2. Credenciais
+O SDK oficial mercadopago@3.6.2 usa Preference.create e init_point. O servidor verifica vendedor, moeda, preço e referência; nunca recebe cartão. A preferência expira em 24 horas. Pedidos e arquivos são fixados por tentativa, com deduplicação e recuperação após timeout sem recriar a cobrança cegamente.
 
-O arquivo privado .env foi preenchido com as credenciais da conta automática de teste, vendedor 3877354270, aplicação 1488315320590790. A aplicação principal FramebuildsAI é 1397095748767873. Consulte .env.example para os nomes das variáveis. Nunca commite .env ou .netlify. A public key foi guardada localmente, mas o redirecionamento hospedado não precisa expô-la no navegador.
+O webhook payment está registrado em https://framebuildsai.netlify.app/.netlify/functions/mercadopago-webhook. O receptor valida HMAC e grava o evento antes de responder. O worker consulta o pagamento real, aplica atualizações por data e repete falhas. O redirecionamento sozinho nunca libera o produto.
 
-Para Netlify, importe o conteúdo do arquivo local .netlify/netlify-test.env como valores secretos. A assinatura completa do webhook precisa ser copiada do painel para MERCADOPAGO_WEBHOOK_SECRET; o MCP retorna somente um prefixo mascarado. O segredo MERCADOPAGO_RECEIPT_SECRET, gerado localmente, é diferente da assinatura do webhook. A ausência desta última não impede criar uma preferência, mas impede validar notificações e impede produção.
+O comprador acessa o ZIP pelo link privado salvo na página de retorno, válido por 30 dias desde a criação do pedido. O fragmento do link ? removido do endereço e o download usa Authorization, sem segredo na query. Cada download reconsulta o pagamento e bloqueia reembolso ou contestação. Não há envio automático por e-mail; o comprador deve salvar o link.
 
-Para executar o checkout localmente, use npm run dev e abra http://localhost:3000/?checkout=test#pacote. Esse servidor executa as mesmas funções do Netlify; python -m http.server mostra somente a apresentação. No localhost, auto_return e notification_url são omitidos.
+## Teste separado
 
-### 3. Servidor
+O vendedor automático de teste ? 3877354270, aplicação 1488315320590790; comprador 3877354272. Configure MERCADOPAGO_TEST_ACCESS_TOKEN, MERCADOPAGO_TEST_SELLER_ID, MERCADOPAGO_TEST_APPLICATION_ID, MERCADOPAGO_RECEIPT_SECRET e MERCADOPAGO_WEBHOOK_SECRET. Com MERCADOPAGO_MODE=test e MERCADOPAGO_TEST_ENABLED=true, abra /?checkout=test#pacote. O backend exige test_user e recusa conta real. Testes nunca autorizam download.
 
-netlify/lib/payments.cjs usa MercadoPagoConfig, Preference.create, Preference.get e Payment.search. O navegador envia somente packageId e attemptId. O servidor resolve o preço em packages.json, valida o vendedor por GET /users/me e exige a tag test_user, o ID configurado e o país MLB antes de criar a preferência. Assim, um token real não pode abrir o checkout deste fluxo.
+npm run test:connection cria uma preferência e consulta a API de teste; não executa pagamento. Essa conexão já passou, mas ainda falta concluir a compra com o comprador de teste e verificar a notificação no ambiente publicado.
 
-A criação usa a Preferences API (/checkout/preferences), external_reference e a mesma chave de tentativa em requestOptions.idempotencyKey. Ela nunca cria um pagamento diretamente nem recebe dados de cartão. A chave de idempotência enviada não substitui persistência e deduplicação durável em produção.
+## Publicação e liberação
 
-### 4. Cliente
+O netlify.toml na raiz define base sites/framebuilds-ai, build npm run build, publish dist e Functions em netlify/functions. O SDK @netlify/database permite provisionamento do banco e migração no deploy; confirme o resultado no painel do Netlify antes de abrir vendas.
 
-O botão #checkout-action, marcado com data-mp-checkout-cta=checkout-pro, mantém o preço visível no modal e redireciona ao init_point. O navegador exibe carregamento, erros acionáveis e permite repetir a tentativa. O comprovante assinado fica no sessionStorage; recibos da implementação anterior precisam ser substituídos iniciando um novo teste.
+1. Conferir deploy, banco e migração; validar os cinco arquivos no armazenamento privado.
+2. Concluir pagamento de teste aprovado e verificar notificação. Não confundir simulação de webhook com pagamento aprovado.
+3. Executar npm run check:production com acesso ao banco e ao armazenamento. O comando não movimenta dinheiro nem certifica um pagamento real.
+4. Configurar MERCADOPAGO_MODE=production, MERCADOPAGO_LIVE_ENABLED=true e salesOpen=true; publicar e validar o checkout completo. Abertura exige os três controles e arquivos disponíveis.
+5. Depois do envio dos ZIPs, remover FRAMEBUILDS_UPLOAD_TOKEN e FRAMEBUILDS_UPLOAD_EXPIRES do ambiente.
 
-O retorno a pagamento.html consulta o servidor. A aprovação exige status approved, detalhe accredited, live_mode=false, vendedor, moeda, referência e valor correspondentes, sem reembolso. A interface mostra o ID do pagamento quando disponível. Parâmetros da URL nunca são prova de aprovação.
+A avaliação oficial por payment_id e a homologação não estáo certificadas. O formulário consultado pelo MCP não retornou etapas para Checkout Pro (produto 21); não foram enviadas respostas inventadas.
 
-Cartões de teste do Brasil: Visa 4235 6477 2802 5682 ou Mastercard 5031 4332 1540 6351; validade 11/30; CVV 123; titular APRO para aprovação ou FUND para recusa; CPF 12345678909. Use somente dentro do fluxo de teste e com o comprador de teste, nunca com a conta do vendedor.
-
-### 5. Webhook
-
-A skill mp-webhooks orientou o receptor em netlify/functions/mercadopago-webhook.cjs. O tópico correto é payment (Pagamentos). A configuração de teste da aplicação principal foi salva com a URL https://framebuildsai.netlify.app/.netlify/functions/mercadopago-webhook.
-
-O receptor valida HMAC-SHA256 usando data.id da query, x-request-id e ts; compara em tempo constante e confere se o ID do corpo coincide. Eventos de produção são ignorados. Responde 200 imediatamente para notificações válidas, sem trabalho assíncrono que possa ser encerrado pelo runtime do Netlify. Nesta fase não há processamento durável nem liberação de arquivos; a consulta no retorno é independente. Antes de vendas reais, adicionar fila durável, conciliação, registro de pedidos e entrega idempotente.
-
-### 6. Testes
-
-npm test executa 18 testes de backend e 8 de interface, incluindo o SDK real com transporte simulado. npm run test:connection cria uma preferência com as credenciais do .env e consulta seu status na API real; salva dados técnicos somente em .netlify/connection-test.json.
-
-A conexão real, criação de preferência e consulta foram aprovadas; o resultado permanece pending, porque nenhum pagamento foi concluído. Isso não comprova um pagamento aprovado nem a entrega do webhook. Use o comprador automático 3877354272 no checkout e conclua o teste com os cartões acima. A skill mp-test-setup serve para criar ou financiar outro comprador, se necessário; as contas automáticas existentes não foram duplicadas.
-
-### 7. Documentação
+## Referências
 
 - [Checkout Pro](https://www.mercadopago.com.br/developers/pt/docs/checkout-pro-preferences/overview)
-- [API de preferências](https://www.mercadopago.com.br/developers/pt/reference/online-payments/checkout-pro-preferences/overview)
-- [Configuração da aplicação](https://www.mercadopago.com.br/developers/panel/app/1397095748767873)
-- [Variáveis das Functions](https://docs.netlify.com/build/functions/environment-variables/)
-
-### 8. Cuidados
-
-Use init_point. Auto_return só é habilitado para HTTPS público. Prefixos de chave não comprovam o tipo da conta: o teste verifica o vendedor via API. O valor da compra é calculado no servidor. Não confie no status do redirecionamento ou na assinatura de um webhook como prova isolada de pagamento.
-
-### 9. Próximas etapas
-
-1. Concluir a configuração da assinatura e verificar a entrega do webhook (mp-webhooks).
-2. Concluir uma compra com o comprador de teste (mp-test-setup, se precisar preparar outro).
-3. Executar a avaliação por payment_id e homologação com mp-review. A revisão está em PAYMENT-REVIEW.md; produção ainda não está liberada.
-
-Os pacotes avulsos têm seleções distintas nesta versão; o combo reúne a união, sem contar uma skill duas vezes. Foram deixadas fora nove rotinas de configuração, mascotes e gestão interna. O número de skills inclui etapas de apoio de um mesmo processo e não representa um conjunto de aplicações independentes. Os requisitos por pacote aparecem em “Ver skills e requisitos”.
-
-O catálogo descreve as skills disponíveis no ambiente do proprietário. Este projeto não empacota os arquivos das skills, não transfere contas de ferramentas e não atribui direitos de revenda sobre materiais de terceiros. Antes de disponibilizar o pacote comercial, revisar as licenças dos materiais efetivamente incluídos e confirmar a autorização de redistribuição. Skills dependentes de plugins, sistema operacional e contas exigem ambientes compatíveis. O site explicita essas dependências nas perguntas frequentes.
-
-O site de referência foi usado para estudar a estrutura de venda. Texto, componentes e identidade desta página foram criados para framebuilds.ai. Não foram copiados depoimentos ou resultados financeiros de terceiros.
+- [Painel da aplicação](https://www.mercadopago.com.br/developers/panel/app/1397095748767873)
+- [Netlify Database](https://docs.netlify.com/build/data-and-storage/netlify-database/getting-started/)
+- [Netlify Blobs](https://docs.netlify.com/build/data-and-storage/netlify-blobs/)

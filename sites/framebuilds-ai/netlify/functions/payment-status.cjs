@@ -1,3 +1,3 @@
 'use strict';
-const { createPayments } = require('../lib/payments.cjs');
-exports.handler = event => createPayments().status(event);
+const { createGateway } = require('../lib/payment-gateway.cjs');
+exports.handler = event => createGateway().status(event);
