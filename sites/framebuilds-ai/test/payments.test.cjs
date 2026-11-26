@@ -138,11 +138,23 @@ test('status is pending before payment, then checks the server payment and displ
     assert.equal(f.calls.at(-1).reference, f.preference.external_reference);
   }
 });
-test('live payments and mismatched seller, amount, currency or reference never approve', async () => {
-  for (const payment of [{ live_mode: true }, { collector_id: 326355222 }, { transaction_amount: 0.01 }, { currency_id: 'ARS' }, { external_reference: 'foreign' }]) {
+test('mismatched seller, invalid mode, amount, currency or reference never approve', async () => {
+  for (const payment of [{ live_mode: 'true' }, { collector_id: 326355222 }, { transaction_amount: 0.01 }, { currency_id: 'ARS' }, { external_reference: 'foreign' }]) {
     const f = fixture(); const { receipt } = await start(f); f.setPayments([{ status: 'approved', status_detail: 'accredited', ...payment }]);
     const r = await f.app.status(post({ receipt })); assert.equal(r.statusCode, 502);
   }
+});
+test('APP_USR test-account approval can have live_mode=true and never grants delivery', async () => {
+  const f = fixture(); const { receipt } = await start(f);
+  f.setPayments([{ live_mode: true, status: 'approved', status_detail: 'accredited' }]);
+  const result = await f.app.status(post({ receipt }));
+  assert.equal(result.statusCode, 200); assert.equal(parse(result).status, 'approved'); assert.equal(parse(result).mode, 'test'); assert.equal(parse(result).deliveryEnabled, false);
+});
+test('test status re-verifies the seller tag before accepting an APP_USR payment', async () => {
+  const seller = { id: 3877354270, site_id: 'MLB', tags: ['test_user'] };
+  const f = fixture({ seller }); const { receipt } = await start(f);
+  seller.tags = []; f.setPayments([{ live_mode: true, status: 'approved', status_detail: 'accredited' }]);
+  assert.equal((await f.app.status(post({ receipt }))).statusCode, 503);
 });
 function notification(body = {}) {
   const paymentId = '1234567890'; const requestId = randomUUID(); const ts = String(now);
@@ -161,6 +173,8 @@ test('duplicate signed notifications acknowledge immediately without claiming pa
   const f = fixture();
   for (let i = 0; i < 2; i++) assert.deepEqual(parse(await f.app.webhook(notification())), { received: true, signatureVerified: true, mode: 'test', deliveryEnabled: false });
   assert.equal(parse(await f.app.webhook(notification({ live_mode: true }))).ignored, true);
+  assert.equal(parse(await f.app.webhook(notification({ live_mode: true, user_id: 3877354270 }))).mode, 'test');
+  assert.equal(parse(await f.app.webhook(notification({ live_mode: true, user_id: 326355222 }))).ignored, true);
   assert.equal(parse(await f.app.webhook(notification({ type: 'order' }))).ignored, true);
   assert.equal(f.calls.length, 0);
 });

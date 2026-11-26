@@ -189,6 +189,7 @@ test('webhooks validate signatures, ignore test events and durably deduplicate r
   const invalid = notification(); invalid.headers['x-signature'] += '00';
   assert.equal((await f.app.webhook(invalid)).statusCode, 401);
   assert.equal(parse(await f.app.webhook(notification('123', { live_mode: false }))).ignored, true);
+  assert.equal(parse(await f.app.webhook(notification('123', { live_mode: true, user_id: 3877354270 }))).ignored, true);
   for (let i = 0; i < 2; i++) assert.equal((await f.app.webhook(valid)).statusCode, 200);
   assert.equal((await f.db.query('SELECT count(*)::int AS n FROM commerce_events')).rows[0].n, 1);
   assert.equal(f.reads, 0);

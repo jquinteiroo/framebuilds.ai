@@ -81,7 +81,9 @@ function createPayments({ env = process.env, fetchImpl = globalThis.fetch, now =
     if (preference.id !== claims.preferenceId || String(preference.collector_id) !== sellerId || preference.external_reference !== claims.reference || preference.items?.length !== 1 || !item || item.currency_id !== 'BRL' || item.quantity !== 1 || cents(item.unit_price) !== claims.priceCents) throw new PaymentError(502, 'A preferência retornada não corresponde a esta tentativa (MP_PREFERENCE_MISMATCH).');
   }
   function inspectPayment(payment, claims) {
-    if (!PAYMENT_ID.test(String(payment.id)) || payment.live_mode !== false || String(payment.collector_id) !== sellerId || payment.currency_id !== 'BRL' || payment.external_reference !== claims.reference || cents(payment.transaction_amount) !== claims.priceCents) throw new PaymentError(502, 'O pagamento não corresponde a este teste (MP_PAYMENT_MISMATCH).');
+    // APP_USR test-account payments can report live_mode=true. The verified
+    // test_user seller and exact collector ID determine this test boundary.
+    if (!PAYMENT_ID.test(String(payment.id)) || typeof payment.live_mode !== 'boolean' || String(payment.collector_id) !== sellerId || payment.currency_id !== 'BRL' || payment.external_reference !== claims.reference || cents(payment.transaction_amount) !== claims.priceCents) throw new PaymentError(502, 'O pagamento não corresponde a este teste (MP_PAYMENT_MISMATCH).');
     const approved = payment.status === 'approved' && payment.status_detail === 'accredited' && cents(payment.transaction_amount_refunded || 0) === 0;
     const failed = ['rejected', 'cancelled', 'refunded', 'charged_back'].includes(payment.status);
     return { paymentId: String(payment.id), status: approved ? 'approved' : failed ? 'failed' : 'pending' };
@@ -128,6 +130,7 @@ function createPayments({ env = process.env, fetchImpl = globalThis.fetch, now =
     status: guarded(async event => {
       requirePost(event); requireReady(); requireOrigin(event);
       const claims = readReceipt(bodyOf(event, ['receipt']).receipt);
+      await verifyTestSeller();
       inspectPreference(await gateway.getPreference(claims.preferenceId), claims);
       const result = await gateway.findPayments(claims.reference);
       if (!Array.isArray(result.results)) throw new PaymentError(502, 'Resposta de pagamento inválida.');
@@ -152,7 +155,7 @@ function createPayments({ env = process.env, fetchImpl = globalThis.fetch, now =
       if (!hashes.some(hash => equalHex(hash, expected))) throw new PaymentError(401, 'Notificação não autenticada.');
       const input = bodyOf(event);
       if (String(input.data?.id) !== id) throw new PaymentError(400, 'Identificadores da notificação não correspondem.');
-      if (input.type !== 'payment' || (query.type && query.type !== 'payment') || input.live_mode !== false) return response(200, { received: true, ignored: true });
+      if (input.type !== 'payment' || (query.type && query.type !== 'payment') || typeof input.live_mode !== 'boolean' || (input.live_mode === true && String(input.user_id) !== sellerId)) return response(200, { received: true, ignored: true });
       // Acknowledge immediately; this test stage has no fulfillment side effects.
       // The status endpoint independently re-reads payments. Production requires
       // a durable queue; work after a classic Function response is not reliable.

@@ -162,7 +162,7 @@ function createCommerce({ env = process.env, repository, assets, provider, fetch
       if (!hashes.some(hash => equalHex(hash, expected))) throw new PaymentError(401, 'Notificação não autenticada.');
       const input = bodyOf(event);
       if (String(input.data?.id) !== id) throw new PaymentError(400, 'Notificação inválida.');
-      if (input.type !== 'payment' || input.live_mode !== true || (event.queryStringParameters.type && event.queryStringParameters.type !== 'payment')) return response(200, { received: true, ignored: true });
+      if (input.type !== 'payment' || input.live_mode !== true || (input.user_id != null && String(input.user_id) !== sellerId) || (event.queryStringParameters.type && event.queryStringParameters.type !== 'payment')) return response(200, { received: true, ignored: true });
       // Commit the event to the durable inbox before acknowledging. No Mercado
       // Pago lookup or post-response work happens in this request.
       const key = createHash('sha256').update(id + ':' + requestId + ':' + ts).digest('hex');
