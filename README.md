@@ -1,9 +1,9 @@
 # framebuilds.ai
 
-Loja em português com 90 rotinas originais distribuídas em quatro pacotes e um combo. Integração Mercado Pago Checkout Pro, pedidos PostgreSQL e entrega de arquivos privados no Netlify.
+Loja publicada em https://framebuildsai.netlify.app, com 90 rotinas originais em quatro pacotes e um combo, Mercado Pago Checkout Pro e entrega de arquivos privados.
 
-A aplicação FramebuildsAI foi criada e as credenciais reais foram ativadas. As vendas continuam fechadas enquanto se valida a configuração publicada e o pagamento completo.
+Pagamentos reais estão habilitados. Foram concluídos dois pagamentos fictícios e a avaliação oficial do cartão retornou nota 95 e homologação aprovada. A criação de uma preferência real, a reutilização da tentativa e o bloqueio de download de pedido não pago foram verificados. Nenhum pagamento com dinheiro real foi executado.
 
-Consulte o [guia de desenvolvimento, produtos e publicação](sites/framebuilds-ai/README.md) e a [revisão de pagamentos](sites/framebuilds-ai/PAYMENT-REVIEW.md).
+Consulte o [guia de desenvolvimento, produtos e manutenção](sites/framebuilds-ai/README.md) e a [revisão de pagamentos](sites/framebuilds-ai/PAYMENT-REVIEW.md).
 
-O deploy usa o netlify.toml desta pasta: base sites/framebuilds-ai, comando npm run build e diretório público dist. Os ZIPs e suas fontes ficam em .products, ignorados pelo Git. Somente resumos comerciais e hashes entram no repositório público.
+O deploy usa netlify.toml: base sites/framebuilds-ai, build npm run build e diretório público dist. As fontes e os ZIPs pagos ficam em .products, ignorados pelo Git. Apenas resumos e hashes entram no repositório público.

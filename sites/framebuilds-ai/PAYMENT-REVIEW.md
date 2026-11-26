@@ -1,34 +1,33 @@
 # Mercado Pago Integration Review
 
-Data: 26/11/2026. Checkout Pro pela Preferences API e SDK oficial mercadopago@3.6.2. Aplicação 1397095748767873; vendedor real 326355222 (MLB), confirmado via API, sem tag test_user.
+Data: 26/11/2026. Checkout Pro pela Preferences API e mercadopago@3.6.2. Aplicação 1397095748767873; vendedor real 326355222 (MLB), confirmado via API e sem test_user.
 
 ## Resultado
 
-O código de produção inclui pedidos duráveis em PostgreSQL, preferências deduplicadas, webhook com HMAC, conciliação agendada e download privado condicionado é aprovação. A conta foi ativada no painel e as credenciais/assinatura foram guardadas como segredos no Netlify. As vendas permanecem fechadas até verificar deploy, migração, arquivos e pagamento completo.
+Integração publicada em produção com pedidos PostgreSQL, preferências deduplicadas, webhook com HMAC, conciliação agendada e entrega de ZIPs privados. Configuração publicada: enabled=true, mode=production, livePaymentsEnabled=true, deliveryEnabled=true.
 
-Os testes usam PGlite para executar o esquema e as transações PostgreSQL; transportes do Mercado Pago e armazenamento são simulados. Eles não substituem um pagamento aprovado e uma notificação entregue pelo provedor.
+A avaliação oficial do pagamento fictício de cartão 191844456436 retornou score=95, minScore=73 e homologationApprove=true, sem critérios obrigatórios incompletos. O pagamento fictício com saldo 191841763818 também foi aprovado. A interface confirmou os dois retornos em modo de teste, sem liberar arquivos.
 
-## Verificado
+Foi criada e consultada uma preferência de produção de R$ 19,90, com collector_id=326355222, BRL, referência durável, notification_url e expiração corretos. Repetir o mesmo attemptId retornou a mesma preferência. O pedido não pago permaneceu pending e seu download retornou 403. Nenhum pagamento com dinheiro real foi executado.
 
-- 52 testes da integração e interface aprovados; quatro testes adicionais aprovados cobrem o envio privado de arquivos.
-- Os 90 diretórios de skills passaram no quick_validate oficial; os cinco ZIPs passaram em integridade e contagem.
-- Conta real confirmada por /users/me, sem realizar cobrança.
-- Criação de preferência e consulta de status de teste passaram na API real, ainda sem pagamento concluído.
-- Segredos excluídos do Git, preços resolvidos no servidor, ambientes separados e init_point validado.
-- Pedido salvo antes da preferência; lease atémico e recuperação de timeout por referência.
-- HMAC verificado em tempo constante; evento persistido antes do ACK; worker com lease e repetição.
-- Aprovação vinculada a vendedor, valor, BRL, referência e live_mode; atualizações antigas não sobrescrevem reembolso.
+## Evidências
+
+- 56 testes permanentes aprovados: 20 de pagamentos de teste, 10 de interface, 19 de comércio com PostgreSQL/PGlite, cinco de resultado/download e dois de adaptação HTTP.
+- 90 skills originais passaram no quick_validate oficial. Cinco ZIPs íntegros, geração reproduzível e upload privado confirmado.
+- Netlify Database provisionado e migração aplicada; pedidos e eventos usam transações, locks e leases.
+- O pedido é salvo antes da preferência; falhas incertas são recuperadas por referência.
+- HMAC sintético publicado retornou 200 com assinatura válida e 401 sem assinatura. Isso comprova autenticação/rede, sem ser apresentado como entrega do provedor.
+- Aprovação confere vendedor, valor, BRL e referência; atualizações antigas não sobrescrevem reembolso.
+- Fluxo real recusa vendedor test_user. Contas APP_USR de teste podem informar live_mode=true; o teste usa a tag verificada e o collector_id, com recibos distintos e entrega sempre desativada.
 - Cada download reconsulta o pagamento; reembolso e contestação revogam acesso.
-- Fontes e ZIPs pagos ignorados pelo Git; manifesto público contém somente hashes e chaves privadas.
+- Segredos, fontes pagas e ZIPs fora do Git público. Rota temporária de provisionamento removida após o envio.
 
-## Pendências do ambiente
+## Limites da validação
 
-- Confirmar deploy atual, provisionamento do Netlify Database e migração.
-- Enviar e verificar cinco objetos privados; manifesto isolado não comprova upload.
-- Concluir pagamento com comprador de teste e conferir a notificação real.
-- quality_evaluation: não executado, sem payment_id concluído.
-- Homologação: get_form retornou steps vazio para produto 21. Não foi submetida.
-- Manter salesOpen=false e MERCADOPAGO_LIVE_ENABLED=false até resolver essas pendências.
+- O primeiro pagamento com dinheiro real, sua liquidação e o download decorrente ainda não foram executados.
+- O histórico de notificações do MCP da aplicação principal não mostrou eventos. A consulta direta à aplicação automática de teste foi recusada por propriedade OAuth. Não há afirmação de entrega de webhook do pagamento fictício com base nesse histórico.
+- A avaliação oficial funcionou pela aplicação principal, que resolveu o pagamento automático de teste. A chamada direta à aplicação do vendedor de teste também foi recusada por propriedade OAuth.
+- O get_form anterior retornou steps vazio para produto 21; nenhum formulário vazio foi submetido. A aprovação relatada acima vem do campo homologationApprove da avaliação oficial do pagamento de cartão.
 
 ## Checklist oficial
 
@@ -42,7 +41,7 @@ A consulta quality_checklist devolveu os critérios abaixo. Esta tabela é uma c
 | 2 | item_unit_price | Does it send the unit price? | Implementado | Campo enviado na criação da preferência. netlify/lib/commerce.cjs |
 | 3 | statement_descriptor_/_soft_descriptor | Does the integration use a soft descriptor or statement descriptor? | Implementado | Campo enviado na criação da preferência. netlify/lib/commerce.cjs |
 | 4 | back_urls | Does the seller send back urls in the requestá | Implementado | Campo enviado na criação da preferência. netlify/lib/commerce.cjs |
-| 5 | webhooks_ipn | Does the integration has notifications enabled? | Parcial | URL e assinatura completa configuradas; entrega publicada ainda pendente. netlify/lib/commerce.cjs |
+| 5 | webhooks_ipn | Does the integration has notifications enabled? | Parcial | URL e assinatura configuradas; HMAC publicado testado. A avaliação oficial aprovou o campo notification_url; o histórico de entregas do MCP não mostrou eventos. netlify/lib/commerce.cjs |
 | 6 | external_reference | Does it send an external reference for conciliation? | Implementado | Campo enviado na criação da preferência. netlify/lib/commerce.cjs |
 | 7 | email | Does it send the payer’s email address? | Ausente | Não enviado na preferência; o checkout hospedado solicita os dados do comprador. netlify/lib/commerce.cjs |
 | 8 | payer_first_name | Does it send the payer’s first name? | Ausente | Não enviado na preferência; não existe cadastro próprio do comprador. netlify/lib/commerce.cjs |
@@ -82,92 +81,38 @@ A consulta quality_checklist devolveu os critérios abaixo. Esta tabela é uma c
 
 ## Segurança transversal
 
-| # | Verificação | Estado | Evidência |
-|---|---|---|---|
-| 1 | Token somente no servidor | Passou | process.env em payments.cjs; valores somente no .env privado |
-| 2 | .env ignorado e .env.example versionável | Passou | .gitignore |
-| 3 | HMAC-SHA256 em tempo constante | Passou no código e testes | webhook, equalHex e timingSafeEqual em payments.cjs; falta teste de entrega |
-| 4 | HTTPS público para retorno automático e notificações | Passou | publicAppUrl; localhost omite auto_return e notification_url |
-| 5 | Status relido no servidor | Passou | Preference.get e Payment.search; parâmetros do redirect ignorados |
-| 6 | Chave de idempotência estável por tentativa | Passou no envio | requestOptions.idempotencyKey e teste com SDK real |
-| 7 | Referência externa | Passou | external_reference calculada no servidor |
-| 8 | Credenciais de teste separadas | Passou no código local | .env privado e checagem de vendedor test_user via API |
-| 9 | URL de checkout correta | Passou | init_point; domínio e pref_id validados |
-
-## Implementation Report
-
-### Verified
-
-- [x] Aplicação criada e credenciais de teste importadas para arquivo privado.
-- [x] Checkout Pro corrigido para Preferences API e SDK oficial.
-- [x] Botão existente ligado à criação da preferência e ao redirecionamento.
-- [x] 26 testes automatizados, build e dois validadores aprovados.
-- [x] Conexão real, preferência de teste e consulta de status verificadas.
-- [x] Webhook cadastrado via MCP com tópico payment.
-
-### Needs attention
-
-- [ ] Importar as variáveis privadas de teste no Netlify.
-- [ ] Obter a assinatura completa no painel e configurar MERCADOPAGO_WEBHOOK_SECRET.
-- [ ] Concluir uma compra de teste com o comprador automático e conferir notificações.
-- [ ] quality_evaluation: não executado, pois ainda não há payment_id de compra concluída.
-- [ ] Formulário de homologação não submetido.
-
-### Blockers (must fix before production)
-
-- [ ] Credenciais reais ainda não ativadas.
-- [ ] Registro durável de pedidos, conciliação e entrega idempotente não implementados.
-- [ ] Pagamento completo e notificações reais ainda não validados.
-
-### Next steps
-
-1. Configurar variáveis no Netlify e a assinatura completa do webhook.
-2. Concluir o pagamento de teste e avaliar o payment_id pela aplicação de teste 1488315320590790.
-3. Implementar persistência/entrega, concluir homologação e executar mp-review novamente antes da produção.
-
-### Resources used
-
-- Inspeção local e checklist transversal de segurança.
-- MCP quality_checklist e save_webhook, consultados em 26/11/2026.
-- API real via SDK oficial para criação de preferência e busca de pagamentos.
-- Skills mp-integrate, mp-webhooks e mp-review v1.0.0.
-
-**Resultado local:** 9/14 requisitos implementados, 1/22 boas práticas implementadas, 9/9 verificações de segurança no código. Critérios opcionais e não aplicáveis estão discriminados acima. **Veredito:** integração de teste implementada; produção bloqueada. Nenhuma pontuação oficial de pagamento foi obtida.
-
-## Segurança transversal
-
-| Verificação | Resultado no código |
+| Verificação | Evidência |
 | --- | --- |
-| Token somente no servidor | process.env, arquivos ignorados e segredos do Netlify |
-| .env ignorado; exemplo versionável | .gitignore na raiz e na pasta da aplicação |
-| Assinatura do webhook | HMAC-SHA256, comparação em tempo constante e IDs conferidos |
-| HTTPS de retorno/notificação | Obrigatório no fluxo de produção |
-| Confirmação no servidor | Payment.search no retorno, Payment.get no worker e download |
+| Token no servidor | process.env, .env ignorado e segredos Netlify |
+| Arquivos privados ignorados | .gitignore na raiz e na aplicação; ZIPs em .products |
+| Assinatura | HMAC-SHA256 em tempo constante e IDs conferidos |
+| HTTPS | Obrigatório em produção |
+| Confirmação no servidor | Payment.search no retorno; Payment.get no worker/download |
 | Idempotência | Tentativa única em PostgreSQL, lease e chave estável do SDK |
 | Referência externa | UUID gerado e persistido no servidor |
-| Teste separado | Vendedores e recibos independentes; tag test_user conferida |
+| Separação dos ambientes | Vendedor/tag, recibos e chaves de armazenamento independentes |
 | URL hospedada | init_point com domínio e pref_id validados |
 
 ## Implementation Report
 
 ### Verified
 
-Aplicação criada, conta real ativada e verificada, SDK e fluxo corrigidos, armazenamento transacional/entrega implementados, testes locais aprovados e webhook registrado.
+Aplicação criada, credenciais reais ativadas, conta verificada, banco e arquivos privados configurados, dois pagamentos fictícios aprovados, avaliação oficial 95/aprovada, preferência de produção e bloqueio de download não pago verificados.
 
 ### Needs attention
 
-Dados opcionais de comprador não são coletados pela loja; o checkout hospedado os solicita. Sem relatérios financeiros próprios, emissão administrativa de reembolso, disputa de contestação ou entrega por e-mail. Estes recursos não foram solicitados e não são apresentados como implementados.
+Acompanhar a primeira compra real e as notificações no painel. Não há envio de link por e-mail, relatórios financeiros próprios, emissão administrativa de reembolsos ou disputa de contestação pela loja. O comprador salva o link privado de acesso por 30 dias.
 
-### Blockers (must fix before production)
+### Blockers
 
-Verificação de infraestrutura publicada, arquivos privados e pagamento aprovado/notificação completa. Nenhuma cobrança real foi executada.
+Nenhum bloqueio de configuração foi identificado na verificação publicada. Os limites de validação real estão discriminados acima.
 
 ### Next steps
 
-Concluir deploy e upload privado; validar compra de teste; revisar os controles de lançamento. Remover token temporário de provisionamento após enviar os arquivos.
+Monitorar a primeira compra real e manter backup privado de .products. Para suspender novas vendas, usar MERCADOPAGO_LIVE_ENABLED=false; não trocar o ambiente público para teste enquanto houver pedidos reais.
 
 ### Resources used
 
-Inspeção local, checklist oficial quality_checklist, save_webhook e get_credentials do MCP; documentação oficial Mercado Pago/Netlify; skills mp-integrate, mp-webhooks, mp-review e skill-creator.
+SDK e APIs oficiais Mercado Pago; MCP get_credentials, save_webhook, create_test_user (retornou o comprador automático existente), quality_checklist, quality_evaluation e notifications_history; documentação oficial Netlify; skills mp-integrate, mp-webhooks, mp-review, mp-test-setup e skill-creator.
 
-A tabela preserva todos os critérios oficiais consultados. Não é pontuação oficial nem certificado de homologação.
+A tabela acima compara o código local com todos os critérios consultados. A pontuação 95 é o resultado oficial do pagamento de cartão; não é uma pontuação calculada a partir da tabela local.

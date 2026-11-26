@@ -6,7 +6,7 @@
     "node": ">=22.12.0"
   },
   "scripts": {
-    "test": "node test/payments.test.cjs && node test/checkout-ui.test.cjs && node test/commerce.test.cjs && node test/payment-result.test.cjs && node test/provision-products.test.cjs && node test/function-adapter.test.cjs",
+    "test": "node test/payments.test.cjs && node test/checkout-ui.test.cjs && node test/commerce.test.cjs && node test/payment-result.test.cjs && node test/function-adapter.test.cjs",
     "build": "npm test && python scripts/build_site.py",
     "dev": "node --env-file=.env scripts/dev-server.cjs",
     "test:connection": "node --env-file=.env scripts/check-payment-connection.cjs",
