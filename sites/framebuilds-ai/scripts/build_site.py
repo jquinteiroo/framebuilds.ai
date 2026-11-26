@@ -70,6 +70,7 @@ def render():
         'ENTRY_PRICE': money(min(p['priceCents'] for p in singles)),
         'COMBO_PRICE': money(combo['priceCents']),
         'PUBLIC_COUNT': str(len(public_ids)),
+        'TEST_CHECKOUT_LINK': '' if data.get('salesOpen') else '<a href="/?checkout=test#pacote">Testar pagamento</a>',
         'SALES_STATUS': 'Pagamento único. Acesso ao arquivo após confirmação.' if data.get('salesOpen') else 'A loja está em pré-lançamento.',
         'SALES_FAQ': esc(f"Escolha um pacote e conclua o pagamento no Mercado Pago. Após a confirmação, o arquivo fica disponível na página do seu pedido. Os pacotes têm pagamento único, a partir de {money(min(p['priceCents'] for p in singles))}, e o Framebuilds Completo custa {money(combo['priceCents'])}. Guarde seu link privado para voltar ao download por 30 dias após iniciar a compra. Não há envio automático por e-mail." if data.get('salesOpen') else f"As vendas ainda não estão abertas. Os pacotes têm pagamento único, a partir de {money(min(p['priceCents'] for p in singles))}, e o Framebuilds Completo custa {money(combo['priceCents'])}. Quando a compra estiver disponível, as condições de entrega e suporte serão apresentadas antes do pagamento."),
     }

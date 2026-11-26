@@ -2,7 +2,7 @@
 window.FRAMEBUILDS_STORE = {
   "currency": "BRL",
   "paymentMode": "one_time",
-  "salesOpen": false,
+  "salesOpen": true,
   "packages": [
     {
       "id": "conteudo",
@@ -186,7 +186,7 @@ window.FRAMEBUILDS_STORE = {
         "Roteiros, cenas e direção para vídeos",
         "Reels, motion graphics e animações",
         "UGC, tutoriais e vídeos de produto",
-        "Vídeos com Remotion, Hypit e HeyGen"
+        "Roteiros, cenas e direção para vídeos"
       ],
       "requirements": "Agente de IA compatível com arquivos de instruções. Renderização, voz e geração de mídia exigem as ferramentas e contas escolhidas por você; serviços e créditos são contratados à parte.",
       "examplePrompt": "Planeje um vídeo vertical sobre meu produto, com roteiro, narração, legendas e direção de cenas.",

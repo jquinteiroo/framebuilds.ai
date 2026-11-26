@@ -21,7 +21,7 @@ function element() {
     async click() { if (!this.disabled && !this.hidden) await this.handlers.click?.({ preventDefault() {} }); },
   };
 }
-function browser({ query = '', stored = new Map(), fetchImpl, blockedStorage = false, crypto = webcrypto, timer = setTimeout, cancelTimer = clearTimeout, store = catalog } = {}) {
+function browser({ query = '', stored = new Map(), fetchImpl, blockedStorage = false, crypto = webcrypto, timer = setTimeout, cancelTimer = clearTimeout, store = { ...catalog, salesOpen: false } } = {}) {
   const nodes = new Map();
   const document = { querySelector(selector) { if (!nodes.has(selector)) nodes.set(selector, element()); return nodes.get(selector); }, createElement: element };
   const calls = []; const redirects = [];
@@ -41,7 +41,7 @@ function browser({ query = '', stored = new Map(), fetchImpl, blockedStorage = f
 }
 const settle = () => new Promise(resolve => setImmediate(resolve));
 
-test('normal storefront keeps a visible entry to test mode and does not request checkout', async () => {
+test('closed storefront keeps a visible entry to test mode and does not request checkout', async () => {
   const b = browser(); b.open('conteudo');
   assert.equal(b.node('#purchase-dialog').open, true);
   assert.equal(b.node('#checkout-action').hidden, true);

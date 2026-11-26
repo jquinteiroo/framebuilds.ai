@@ -48,7 +48,7 @@
     if (loading) return;
     loading = true;
     ready = false;
-    configMessage = 'Verificando o pagamento de teste...';
+    configMessage = 'Verificando a disponibilidade do pagamento...';
     status.textContent = configMessage;
     render();
     try {
@@ -59,7 +59,7 @@
       ready = config?.enabled === true && (testing ? config.mode === 'test' && config.livePaymentsEnabled === false : config.mode === 'production' && config.livePaymentsEnabled === true && config.deliveryEnabled === true);
       configMessage = ready ? testing ? 'Pronto para testar. Nenhuma compra real será habilitada.' : 'Você pagará no Mercado Pago. O arquivo será liberado após a confirmação.' : 'O pagamento ainda não está disponível. Tente novamente mais tarde.';
     } catch (error) {
-      configMessage = error.name === 'TimeoutError' ? 'A verificação demorou demais. Tente novamente.' : error.message || 'Não foi possível verificar o teste. Tente novamente.';
+      configMessage = error.name === 'TimeoutError' ? 'A verificação demorou demais. Tente novamente.' : error.message || 'Não foi possível verificar o pagamento. Tente novamente.';
     } finally {
       loading = false;
       status.textContent = configMessage;
@@ -77,7 +77,7 @@
     const description = document.querySelector('#purchase-description');
     const price = document.createElement('strong');
     price.textContent = `${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(pack.priceCents / 100)}, em pagamento único.`;
-    description.replaceChildren('Este pacote custa ', price, testing ? ' Este é um checkout de teste e não libera o pacote.' : salesOpen ? ' Você receberá acesso ao arquivo após a confirmação do pagamento.' : ' As vendas ainda não estão abertas.');
+    description.replaceChildren('Este pacote custa ', price, testing ? ' Este é um checkout de teste e não libera o pacote.' : salesOpen ? ' Após a confirmação, baixe o ZIP na página do pedido. Guarde seu link privado de acesso, válido por 30 dias desde o início da compra.' : ' As vendas ainda não estão abertas.');
     status.textContent = testing || salesOpen ? configMessage : '';
     render();
     dialog.showModal();
@@ -111,7 +111,7 @@
       });
       let data;
       try { data = await response.json(); } catch { throw new Error(`O servidor não retornou uma resposta válida (HTTP ${response.status}). Confira o deploy no Netlify e tente novamente.`); }
-      if (!response.ok) throw new Error(data.error || `Não foi possível abrir o checkout de teste (HTTP ${response.status}).`);
+      if (!response.ok) throw new Error(data.error || `Não foi possível abrir o checkout (HTTP ${response.status}).`);
       const url = new URL(data.checkoutUrl);
       if (data.mode !== (testing ? 'test' : 'production') || !data.receipt || url.protocol !== 'https:' || url.hostname !== 'www.mercadopago.com.br' || url.username || url.password || url.port || !url.pathname.startsWith('/checkout/')) throw new Error('O endereço do checkout não é válido.');
       if (!dialog.open || controller.signal.aborted) return;
@@ -119,11 +119,11 @@
         sessionStorage.setItem(testing ? 'framebuilds:checkout-test' : 'framebuilds:checkout-live', data.receipt);
         sessionStorage.setItem('framebuilds:last-checkout-mode', data.mode);
       }
-      catch { throw new Error('Permita o armazenamento desta aba no navegador para consultar o resultado do teste.'); }
+      catch { throw new Error('Permita o armazenamento desta aba no navegador para consultar o resultado do pagamento.'); }
       status.textContent = testing ? 'Abrindo o checkout de teste...' : 'Abrindo o Mercado Pago...';
       location.assign(url.href);
     } catch (error) {
-      if (dialog.open && (timedOut || error.name !== 'AbortError')) status.textContent = timedOut ? 'O pedido demorou demais. Tente novamente; a mesma tentativa será reutilizada.' : error.message || 'Não foi possível abrir o checkout de teste. Tente novamente.';
+      if (dialog.open && (timedOut || error.name !== 'AbortError')) status.textContent = timedOut ? 'O pedido demorou demais. Tente novamente; a mesma tentativa será reutilizada.' : error.message || 'Não foi possível abrir o checkout. Tente novamente.';
     } finally {
       clearTimeout(timeout);
       if (activeRequest === controller) activeRequest = null;
