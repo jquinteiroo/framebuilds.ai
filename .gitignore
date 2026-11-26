@@ -6,6 +6,8 @@
 .agents/
 .aws/
 .netlify/
+node_modules/
+.mp-integrate-progress.md
 **/.openai/
 
 # Generated archives and Python caches

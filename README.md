@@ -9,31 +9,36 @@ Importe o repositório `jquinteiroo/framebuilds.ai` pelo GitHub e escolha a bran
 | Campo | Valor |
 | --- | --- |
 | Base directory | `sites/framebuilds-ai` |
-| Build command | `node test/payments.test.cjs && node test/checkout-ui.test.cjs && python scripts/build_site.py` |
+| Build command | `npm run build` |
 | Publish directory | `dist`, relativa à base |
 | Python | `3.12` |
 | Node.js | `22` |
 | Functions directory | `netlify/functions`, relativa à base |
 
-Não é necessário instalar bibliotecas. Sem configuração de credenciais, os endpoints de pagamento permanecem desativados. Após conectar o repositório, novos commits em `main` podem ser publicados automaticamente pela integração Git do Netlify.
+O Netlify instala o SDK oficial `mercadopago@3.6.2` a partir do lockfile. Sem configuração de credenciais, os endpoints de pagamento permanecem desativados. Após conectar o repositório, novos commits em `main` podem ser publicados automaticamente pela integração Git do Netlify.
 
 ## Configurar o pagamento de teste
 
-No projeto do Netlify, entre em **Project configuration > Environment variables** e cadastre:
+A aplicação **FramebuildsAI** (ID 1397095748767873) usa Checkout Pro no Brasil. As credenciais de teste pertencem ao vendedor automático 3877354270, aplicação 1488315320590790; o comprador automático é 3877354272. Credenciais reais da aplicação principal ainda não estão ativadas.
+
+As credenciais importadas ficam somente em sites/framebuilds-ai/.env, ignorado pelo Git. No Netlify, abra **Project configuration > Environment variables** e importe as seguintes variáveis como secretas, disponíveis para Functions:
 
 | Variável | Valor |
 | --- | --- |
-| `MERCADOPAGO_TEST_ACCESS_TOKEN` | Access Token do ambiente **Teste** da aplicação no Mercado Pago |
-| `MERCADOPAGO_WEBHOOK_SECRET` | Assinatura secreta gerada ao salvar o webhook de **Teste** |
-| `MERCADOPAGO_TEST_ENABLED` | `true` |
+| MERCADOPAGO_TEST_ACCESS_TOKEN | Access Token do vendedor de teste automático |
+| MERCADOPAGO_TEST_SELLER_ID | 3877354270 |
+| MERCADOPAGO_TEST_APPLICATION_ID | 1488315320590790 |
+| MERCADOPAGO_RECEIPT_SECRET | Segredo aleatório exclusivo, já gerado no arquivo local |
+| MERCADOPAGO_TEST_ENABLED | true |
+| MERCADOPAGO_WEBHOOK_SECRET | Assinatura completa do painel de Webhooks, contexto Teste |
 
-Os valores precisam estar disponíveis às Functions. As variáveis secretas ficam no painel do Netlify, não no código nem no chat. Depois de alterar as variáveis, faça um novo deploy.
+A importação pode ser feita pelo conteúdo do arquivo privado sites/framebuilds-ai/.netlify/netlify-test.env. Ele contém as variáveis necessárias ao checkout; a assinatura do webhook deve ser preenchida separadamente no Netlify e no .env. Nunca envie chaves no chat nem as inclua em commits. Não importe a variável automática URL do Netlify.
 
-No Mercado Pago, abra **Configuração de webhooks**, mantenha **Teste**, informe `https://framebuildsai.netlify.app/.netlify/functions/mercadopago-webhook`, selecione **Order (Mercado Pago)** e salve para obter a assinatura secreta. Então cadastre essa assinatura no Netlify.
+O webhook da aplicação foi cadastrado em https://framebuildsai.netlify.app/.netlify/functions/mercadopago-webhook com o tópico **payment (Pagamentos)**. O MCP revela somente os primeiros caracteres da assinatura, portanto a chave completa precisa ser obtida no painel. A entrega de uma notificação real ainda precisa ser testada.
 
-Após o deploy, abra `https://framebuildsai.netlify.app/?checkout=test#pacote`. Esse modo mostra uma faixa de teste e permite testar os cinco pacotes. A página normal continua exibindo o aviso de vendas em breve e uma entrada para o ambiente de testes. O rodapé também tem o link “Testar pagamento”. O modo de teste é mantido na mesma aba; use “Sair do teste” na faixa para retornar à loja normal. Não são liberados arquivos. Nenhum pagamento real é habilitado por essa implementação.
+Após configurar e publicar, abra https://framebuildsai.netlify.app/?checkout=test#pacote e selecione um pacote. A loja continua em pré-lançamento. O servidor confirma o ID e a identificação de conta de teste do vendedor antes de criar uma preferência; nenhuma entrega de arquivos está habilitada.
 
-Consulte os [detalhes técnicos e limites](sites/framebuilds-ai/README.md#pagamentos-de-teste) antes de planejar a abertura das vendas.
+Foram aprovados 26 testes automatizados e um teste real de criação de preferência/consulta ao Mercado Pago, ainda sem concluir o pagamento. Consulte os [detalhes da integração](sites/framebuilds-ai/README.md#pagamentos-de-teste) e a [revisão](sites/framebuilds-ai/PAYMENT-REVIEW.md).
 
 ## Alterações
 

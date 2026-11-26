@@ -41,7 +41,7 @@
     action.hidden = !testing;
     entry.hidden = testing;
     action.disabled = loading || !!activeRequest;
-    action.textContent = activeRequest ? 'Preparando checkout...' : loading ? 'Verificando configuração...' : ready ? 'Abrir checkout de teste ↗' : 'Verificar configuração de teste ↻';
+    action.textContent = activeRequest ? 'Preparando checkout...' : loading ? 'Verificando configuração...' : ready ? 'Pagar com Mercado Pago · teste ↗' : 'Verificar configuração de teste ↻';
   }
   async function loadConfig() {
     if (loading) return;
@@ -56,7 +56,7 @@
       try { config = await response.json(); } catch { throw new Error('A configuração não retornou uma resposta válida. Confira o deploy no Netlify e tente novamente.'); }
       if (!response.ok) throw new Error(`Não foi possível verificar a configuração (HTTP ${response.status}). Tente novamente.`);
       ready = config?.enabled === true && config.mode === 'test' && config.livePaymentsEnabled === false;
-      configMessage = ready ? 'Pronto para testar. Nenhuma compra real será habilitada.' : 'O teste está desativado no servidor. Confira as três variáveis de teste no Netlify e faça um novo deploy.';
+      configMessage = ready ? 'Pronto para testar. Nenhuma compra real será habilitada.' : 'O teste está desativado no servidor. Confira as variáveis de teste e faça um novo deploy.';
     } catch (error) {
       configMessage = error.name === 'TimeoutError' ? 'A verificação demorou demais. Tente novamente.' : error.message || 'Não foi possível verificar o teste. Tente novamente.';
     } finally {
@@ -92,7 +92,8 @@
     openPurchase(packageId);
     loadConfig();
   });
-  action.addEventListener('click', async () => {
+  action.addEventListener('click', async event => {
+    event.preventDefault();
     if (!testing || loading || activeRequest) return;
     if (!ready) { await loadConfig(); return; }
     const controller = new AbortController();

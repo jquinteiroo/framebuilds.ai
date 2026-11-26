@@ -1,0 +1,13 @@
+{
+  "name": "framebuilds-ai",
+  "version": "1.0.0",
+  "private": true,
+  "engines": { "node": ">=22" },
+  "scripts": {
+    "test": "node test/payments.test.cjs && node test/checkout-ui.test.cjs",
+    "build": "npm test && python scripts/build_site.py",
+    "dev": "node --env-file=.env scripts/dev-server.cjs",
+    "test:connection": "node --env-file=.env scripts/check-payment-connection.cjs"
+  },
+  "dependencies": { "mercadopago": "3.6.2" }
+}

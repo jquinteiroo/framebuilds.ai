@@ -31,7 +31,7 @@
       if (data.mode !== 'test' || data.deliveryEnabled !== false) throw new Error('Resposta de teste inválida.');
       title.textContent = data.status === 'approved' ? 'Pagamento de teste confirmado.' : data.status === 'failed' ? 'O teste não foi aprovado.' : 'O teste aguarda confirmação.';
       description.textContent = data.status === 'approved' ? 'O Mercado Pago confirmou este pagamento no ambiente de testes.' : data.status === 'failed' ? 'Você pode voltar aos pacotes e iniciar uma nova tentativa.' : 'O pagamento ainda está em processamento ou pendente. Consulte novamente em alguns instantes.';
-      packageLine.textContent = `${data.packageName} · ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.priceCents / 100)}`;
+      packageLine.textContent = `${data.packageName} · ${new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(data.priceCents / 100)}${data.paymentId ? ` · Pagamento ${data.paymentId}` : ''}`;
     } catch (error) {
       title.textContent = 'Não foi possível confirmar o teste.';
       description.textContent = error.message || 'Tente consultar novamente.';

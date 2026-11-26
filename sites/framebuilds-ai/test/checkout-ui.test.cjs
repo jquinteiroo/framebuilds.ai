@@ -7,7 +7,7 @@ const { webcrypto } = require('node:crypto');
 const source = readFileSync(require.resolve('../dist/checkout.js'), 'utf8');
 const catalog = require('../packages.json');
 const configured = { enabled: true, mode: 'test', livePaymentsEnabled: false, deliveryEnabled: false };
-const checkoutUrl = 'https://www.mercadopago.com.br/checkout/v1/redirect?order_id=ORDTST01KS5AJ6HTK2HRQ3XJ3C2JCKP9';
+const checkoutUrl = 'https://www.mercadopago.com.br/checkout/v1/redirect?pref_id=3877354270-12345678-1234-4234-8234-123456789abc';
 
 // Minimal DOM boundary; the actual checkout script, events, fetches and redirects run unchanged.
 function element() {
@@ -57,7 +57,7 @@ test('test mode survives navigation without query parameters in the same tab and
   const first = browser({ query: '?checkout=test' }); await settle();
   const next = browser({ stored: first.stored }); await settle(); next.open('video');
   assert.equal(next.node('#checkout-action').hidden, false);
-  assert.match(next.node('#checkout-action').textContent, /Abrir checkout/);
+  assert.match(next.node('#checkout-action').textContent, /Pagar com Mercado Pago/);
   const exited = browser({ query: '?checkout=off', stored: first.stored }); exited.open('conteudo');
   assert.equal(exited.node('#checkout-action').hidden, true);
   assert.equal(exited.stored.has('framebuilds:checkout-test-mode'), false);
@@ -82,7 +82,7 @@ test('configuration failure stays visible and can be retried without reloading',
   assert.match(b.node('#checkout-status').textContent, /Conexão indisponível/);
   assert.equal(b.node('#checkout-action').disabled, false);
   await b.node('#checkout-action').click();
-  assert.match(b.node('#checkout-action').textContent, /Abrir checkout/);
+  assert.match(b.node('#checkout-action').textContent, /Pagar com Mercado Pago/);
   assert.equal(b.calls.length, 2);
 });
 test('HTML server errors and provider errors remain visible and retries use the same attempt', async () => {
