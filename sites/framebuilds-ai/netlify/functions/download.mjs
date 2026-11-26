@@ -1,3 +1,5 @@
+// Keep the SDK visible to Netlify's dependency tracer for CJS services.
+import 'mercadopago';
 import commerce from '../lib/commerce.cjs';
 import shared from '../lib/payments.cjs';
 const { createCommerce } = commerce;
