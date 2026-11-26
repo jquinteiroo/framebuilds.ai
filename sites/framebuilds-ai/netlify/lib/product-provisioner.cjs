@@ -3,7 +3,7 @@
 // versions in the manifest, never read files or modify orders/payments.
 const { createHash, timingSafeEqual } = require('node:crypto');
 const manifest = require('../../product-manifest.json');
-const { validAsset } = require('../lib/product-assets.cjs');
+const { validAsset } = require('./product-assets.cjs');
 function createProvisioner({ env = process.env, entries = manifest, storeFactory, now = Date.now } = {}) {
   return async event => {
     const reply = statusCode => ({ statusCode, headers: { 'Cache-Control': 'no-store', 'Content-Type': 'application/json' }, body: JSON.stringify({ ok: statusCode === 200 }) });
@@ -32,5 +32,4 @@ function createProvisioner({ env = process.env, entries = manifest, storeFactory
     } catch { return reply(503); }
   };
 }
-exports.handler = createProvisioner();
 exports.createProvisioner = createProvisioner;

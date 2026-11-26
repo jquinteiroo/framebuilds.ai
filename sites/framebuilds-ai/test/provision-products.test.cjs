@@ -2,7 +2,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { createHash } = require('node:crypto');
-const { createProvisioner } = require('../netlify/functions/provision-products.cjs');
+const { createProvisioner } = require('../netlify/lib/product-provisioner.cjs');
 const data = Buffer.from('PK-test-private-archive');
 const sha256 = createHash('sha256').update(data).digest('hex');
 const asset = { key: 'packages/' + sha256 + '.zip', sha256, size: data.length, fileName: 'conteudo.zip' };
